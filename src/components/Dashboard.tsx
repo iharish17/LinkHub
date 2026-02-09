@@ -137,13 +137,25 @@ export function Dashboard() {
             </p>
           </div>
 
-          <button
-            onClick={signOut}
-            className="flex items-center gap-2 text-sm px-4 py-2 rounded-xl bg-gray-100 hover:bg-gray-200 transition font-semibold text-gray-700"
-          >
-            <LogOut className="w-4 h-4" />
-            Logout
-          </button>
+<button
+  onClick={async () => {
+    try {
+      const toastId = toast.loading("Logging out...");
+
+      await signOut();
+
+      toast.success("Logged out successfully 👋", { id: toastId });
+
+      window.location.href = "/";
+    } catch (err: any) {
+      toast.error(err.message || "Logout failed ❌");
+    }
+  }}
+  className="flex items-center gap-2 text-sm px-4 py-2 rounded-xl bg-gray-100 hover:bg-gray-200 transition font-semibold text-gray-700"
+>
+  <LogOut className="w-4 h-4" />
+  Logout
+</button>
         </div>
       </header>
 
