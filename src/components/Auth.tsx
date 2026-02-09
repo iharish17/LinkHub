@@ -43,7 +43,7 @@ export function Auth() {
 
         if (error) throw error;
 
-        toast.success("Account created successfully 🎉", { id: toastId });
+        toast.success("Account created successfully 🎉, Please confirm your email to continue", { id: toastId });
 
         setIsLogin(true);
         setUsername("");
