@@ -1,17 +1,69 @@
-import { useState, useEffect } from 'react';
-import { supabase, Link } from '../lib/supabase';
-import { Plus, Trash2, Edit2, GripVertical, Check, X, Eye, EyeOff } from 'lucide-react';
+import { useState, useEffect } from "react";
+import { supabase, Link } from "../lib/supabase";
+import {
+  Plus,
+  Trash2,
+  Edit2,
+  Check,
+  X,
+  Eye,
+  EyeOff,
+  ArrowUp,
+  ArrowDown,
+  Globe,
+} from "lucide-react";
+import toast from "react-hot-toast";
+import { FaXTwitter } from "react-icons/fa6";
+import {
+  FaGithub,
+  FaLinkedin,
+  FaInstagram,
+  FaYoutube,
+} from "react-icons/fa";
 
 type LinkManagerProps = {
   userId: string;
 };
+
+const popularLinks = [
+  {
+    title: "LinkedIn",
+    url: "https://linkedin.com/in/",
+    icon: <FaLinkedin className="w-5 h-5 text-blue-600" />,
+  },
+  {
+    title: "GitHub",
+    url: "https://github.com/",
+    icon: <FaGithub className="w-5 h-5 text-gray-800" />,
+  },
+  {
+    title: "Instagram",
+    url: "https://instagram.com/",
+    icon: <FaInstagram className="w-5 h-5 text-pink-600" />,
+  },
+  {
+    title: "YouTube",
+    url: "https://youtube.com/",
+    icon: <FaYoutube className="w-5 h-5 text-red-600" />,
+  },
+  {
+    title: "Twitter / X",
+    url: "https://twitter.com/",
+    icon: <FaXTwitter className="w-5 h-5 text-black" />,
+  },
+  {
+    title: "Portfolio",
+    url: "https://",
+    icon: <Globe className="w-5 h-5 text-green-600" />,
+  },
+];
 
 export function LinkManager({ userId }: LinkManagerProps) {
   const [links, setLinks] = useState<Link[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
-  const [formData, setFormData] = useState({ title: '', url: '' });
+  const [formData, setFormData] = useState({ title: "", url: "" });
 
   useEffect(() => {
     loadLinks();
@@ -20,15 +72,15 @@ export function LinkManager({ userId }: LinkManagerProps) {
   const loadLinks = async () => {
     try {
       const { data, error } = await supabase
-        .from('links')
-        .select('*')
-        .eq('user_id', userId)
-        .order('position', { ascending: true });
+        .from("links")
+        .select("*")
+        .eq("user_id", userId)
+        .order("position", { ascending: true });
 
       if (error) throw error;
       setLinks(data || []);
     } catch (error) {
-      console.error('Error loading links:', error);
+      console.error("Error loading links:", error);
     } finally {
       setLoading(false);
     }
@@ -38,60 +90,68 @@ export function LinkManager({ userId }: LinkManagerProps) {
     e.preventDefault();
 
     let url = formData.url.trim();
-    if (!url.startsWith('http://') && !url.startsWith('https://')) {
-      url = 'https://' + url;
+    if (!url.startsWith("http://") && !url.startsWith("https://")) {
+      url = "https://" + url;
     }
 
     try {
-      const maxPosition = links.length > 0 ? Math.max(...links.map(l => l.position)) : -1;
+      const toastId = toast.loading("Adding link...");
 
-      const { error } = await supabase
-        .from('links')
-        .insert({
-          user_id: userId,
-          title: formData.title,
-          url: url,
-          position: maxPosition + 1,
-          is_active: true,
-        });
+      const maxPosition =
+        links.length > 0 ? Math.max(...links.map((l) => l.position)) : -1;
+
+      const { error } = await supabase.from("links").insert({
+        user_id: userId,
+        title: formData.title,
+        url: url,
+        position: maxPosition + 1,
+        is_active: true,
+      });
 
       if (error) throw error;
 
-      setFormData({ title: '', url: '' });
+      toast.success("Link added ✅", { id: toastId });
+
+      setFormData({ title: "", url: "" });
       setShowAddForm(false);
       await loadLinks();
     } catch (error) {
-      console.error('Error adding link:', error);
+      console.error("Error adding link:", error);
+      toast.error("Failed to add link ❌");
     }
   };
 
   const handleUpdateLink = async (id: string, updates: Partial<Link>) => {
     try {
-      const { error } = await supabase
-        .from('links')
-        .update(updates)
-        .eq('id', id);
+      const toastId = toast.loading("Updating link...");
+
+      const { error } = await supabase.from("links").update(updates).eq("id", id);
 
       if (error) throw error;
+
+      toast.success("Link updated ✅", { id: toastId });
       await loadLinks();
     } catch (error) {
-      console.error('Error updating link:', error);
+      console.error("Error updating link:", error);
+      toast.error("Failed to update link ❌");
     }
   };
 
   const handleDeleteLink = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this link?')) return;
+    if (!confirm("Are you sure you want to delete this link?")) return;
 
     try {
-      const { error } = await supabase
-        .from('links')
-        .delete()
-        .eq('id', id);
+      const toastId = toast.loading("Deleting link...");
+
+      const { error } = await supabase.from("links").delete().eq("id", id);
 
       if (error) throw error;
+
+      toast.success("Link deleted 🗑️", { id: toastId });
       await loadLinks();
     } catch (error) {
-      console.error('Error deleting link:', error);
+      console.error("Error deleting link:", error);
+      toast.error("Failed to delete link ❌");
     }
   };
 
@@ -99,15 +159,15 @@ export function LinkManager({ userId }: LinkManagerProps) {
     await handleUpdateLink(link.id, { is_active: !link.is_active });
   };
 
-  const moveLink = async (index: number, direction: 'up' | 'down') => {
+  const moveLink = async (index: number, direction: "up" | "down") => {
     if (
-      (direction === 'up' && index === 0) ||
-      (direction === 'down' && index === links.length - 1)
+      (direction === "up" && index === 0) ||
+      (direction === "down" && index === links.length - 1)
     ) {
       return;
     }
 
-    const newIndex = direction === 'up' ? index - 1 : index + 1;
+    const newIndex = direction === "up" ? index - 1 : index + 1;
     const newLinks = [...links];
     const temp = newLinks[index];
     newLinks[index] = newLinks[newIndex];
@@ -121,77 +181,125 @@ export function LinkManager({ userId }: LinkManagerProps) {
 
       for (const update of updates) {
         await supabase
-          .from('links')
+          .from("links")
           .update({ position: update.position })
-          .eq('id', update.id);
+          .eq("id", update.id);
       }
 
       await loadLinks();
     } catch (error) {
-      console.error('Error reordering links:', error);
+      console.error("Error reordering links:", error);
+      toast.error("Failed to reorder ❌");
     }
   };
 
+  const handleSelectPopularLink = (title: string, url: string) => {
+    setShowAddForm(true);
+    setFormData({ title, url });
+
+    toast.success(`${title} selected 🚀`);
+  };
+
   if (loading) {
-    return <div className="text-gray-600">Loading links...</div>;
+    return (
+      <div className="bg-white/80 backdrop-blur-xl rounded-3xl border border-gray-200 shadow-lg p-6">
+        <p className="text-gray-600 font-medium">Loading links...</p>
+      </div>
+    );
   }
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+    <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-lg border border-gray-200 p-6 animate-fadeIn">
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-xl font-bold text-gray-900">Your Links</h2>
+        <div>
+          <h2 className="text-xl font-extrabold text-gray-900">Your Links</h2>
+          <p className="text-xs text-gray-500">
+            Add, edit, reorder and hide your links
+          </p>
+        </div>
+
         <button
           onClick={() => setShowAddForm(!showAddForm)}
-          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 font-semibold"
         >
           <Plus className="w-4 h-4" />
           Add Link
         </button>
       </div>
 
+      {/* Popular Links Section */}
+      <div className="mb-6">
+        <h3 className="text-sm font-bold text-gray-800 mb-3">
+          Popular Links (Quick Add)
+        </h3>
+
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+          {popularLinks.map((item) => (
+            <button
+              key={item.title}
+              onClick={() => handleSelectPopularLink(item.title, item.url)}
+              className="flex items-center gap-2 px-3 py-2 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 hover:shadow-md transition-all duration-200 font-semibold text-gray-800"
+            >
+              {item.icon}
+              <span className="text-sm">{item.title}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+
       {showAddForm && (
-        <form onSubmit={handleAddLink} className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
-          <div className="space-y-3">
+        <form
+          onSubmit={handleAddLink}
+          className="mb-6 p-5 bg-gray-50 rounded-2xl border border-gray-200 animate-fadeIn"
+        >
+          <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-semibold text-gray-700 mb-1">
                 Title
               </label>
               <input
                 type="text"
                 value={formData.title}
-                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                onChange={(e) =>
+                  setFormData({ ...formData, title: e.target.value })
+                }
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-4 focus:ring-indigo-200 focus:border-indigo-500 outline-none transition-all"
                 placeholder="My Website"
                 required
               />
             </div>
+
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-semibold text-gray-700 mb-1">
                 URL
               </label>
               <input
                 type="url"
                 value={formData.url}
-                onChange={(e) => setFormData({ ...formData, url: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                onChange={(e) =>
+                  setFormData({ ...formData, url: e.target.value })
+                }
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-4 focus:ring-indigo-200 focus:border-indigo-500 outline-none transition-all"
                 placeholder="example.com"
                 required
               />
             </div>
+
             <div className="flex gap-2">
               <button
                 type="submit"
-                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                className="flex-1 py-3 rounded-xl bg-indigo-600 text-white font-semibold hover:bg-indigo-700 transition"
               >
                 Add Link
               </button>
+
               <button
                 type="button"
                 onClick={() => {
                   setShowAddForm(false);
-                  setFormData({ title: '', url: '' });
+                  setFormData({ title: "", url: "" });
                 }}
-                className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-medium"
+                className="px-5 py-3 rounded-xl bg-gray-200 text-gray-800 font-semibold hover:bg-gray-300 transition"
               >
                 Cancel
               </button>
@@ -201,11 +309,13 @@ export function LinkManager({ userId }: LinkManagerProps) {
       )}
 
       {links.length === 0 ? (
-        <div className="text-center py-12 text-gray-500">
-          <p>No links yet. Click "Add Link" to get started!</p>
+        <div className="text-center py-14 text-gray-500">
+          <p className="font-medium">
+            No links yet. Click "Add Link" to get started!
+          </p>
         </div>
       ) : (
-        <div className="space-y-2">
+        <div className="space-y-3">
           {links.map((link, index) => (
             <LinkItem
               key={link.id}
@@ -235,7 +345,7 @@ type LinkItemProps = {
   onUpdate: (id: string, updates: Partial<Link>) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
   onToggleActive: (link: Link) => Promise<void>;
-  onMove: (index: number, direction: 'up' | 'down') => void;
+  onMove: (index: number, direction: "up" | "down") => void;
 };
 
 function LinkItem({
@@ -266,33 +376,36 @@ function LinkItem({
 
   if (isEditing) {
     return (
-      <div className="p-4 bg-blue-50 border-2 border-blue-200 rounded-lg">
+      <div className="p-5 bg-indigo-50 border border-indigo-200 rounded-2xl shadow-sm animate-fadeIn">
         <div className="space-y-3">
           <input
             type="text"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-4 focus:ring-indigo-200 focus:border-indigo-500 outline-none transition-all"
             placeholder="Title"
           />
+
           <input
             type="url"
             value={url}
             onChange={(e) => setUrl(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-4 focus:ring-indigo-200 focus:border-indigo-500 outline-none transition-all"
             placeholder="URL"
           />
+
           <div className="flex gap-2">
             <button
               onClick={handleSave}
-              className="flex items-center gap-2 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+              className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition font-semibold"
             >
               <Check className="w-4 h-4" />
               Save
             </button>
+
             <button
               onClick={handleCancel}
-              className="flex items-center gap-2 px-3 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors text-sm font-medium"
+              className="flex items-center gap-2 px-4 py-2 bg-gray-200 text-gray-800 rounded-xl hover:bg-gray-300 transition font-semibold"
             >
               <X className="w-4 h-4" />
               Cancel
@@ -304,39 +417,42 @@ function LinkItem({
   }
 
   return (
-    <div className={`p-4 border rounded-lg transition-all ${
-      link.is_active
-        ? 'bg-white border-gray-200'
-        : 'bg-gray-50 border-gray-200 opacity-60'
-    }`}>
+    <div
+      className={`p-5 border rounded-2xl transition-all duration-300 shadow-sm hover:shadow-md ${
+        link.is_active
+          ? "bg-white border-gray-200"
+          : "bg-gray-50 border-gray-200 opacity-60"
+      }`}
+    >
       <div className="flex items-center gap-3">
-        <div className="flex flex-col gap-1">
+        <div className="flex flex-col gap-2">
           <button
-            onClick={() => onMove(index, 'up')}
+            onClick={() => onMove(index, "up")}
             disabled={index === 0}
-            className="p-1 hover:bg-gray-100 rounded disabled:opacity-30 disabled:cursor-not-allowed"
+            className="p-2 hover:bg-gray-100 rounded-xl disabled:opacity-30 disabled:cursor-not-allowed transition"
           >
-            <GripVertical className="w-4 h-4 text-gray-400" />
+            <ArrowUp className="w-4 h-4 text-gray-500" />
           </button>
+
           <button
-            onClick={() => onMove(index, 'down')}
+            onClick={() => onMove(index, "down")}
             disabled={index === totalLinks - 1}
-            className="p-1 hover:bg-gray-100 rounded disabled:opacity-30 disabled:cursor-not-allowed"
+            className="p-2 hover:bg-gray-100 rounded-xl disabled:opacity-30 disabled:cursor-not-allowed transition"
           >
-            <GripVertical className="w-4 h-4 text-gray-400" />
+            <ArrowDown className="w-4 h-4 text-gray-500" />
           </button>
         </div>
 
         <div className="flex-1 min-w-0">
-          <div className="font-medium text-gray-900 truncate">{link.title}</div>
+          <div className="font-bold text-gray-900 truncate">{link.title}</div>
           <div className="text-sm text-gray-500 truncate">{link.url}</div>
         </div>
 
         <div className="flex items-center gap-2">
           <button
             onClick={() => onToggleActive(link)}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-            title={link.is_active ? 'Hide link' : 'Show link'}
+            className="p-2 hover:bg-gray-100 rounded-xl transition"
+            title={link.is_active ? "Hide link" : "Show link"}
           >
             {link.is_active ? (
               <Eye className="w-4 h-4 text-gray-600" />
@@ -344,15 +460,17 @@ function LinkItem({
               <EyeOff className="w-4 h-4 text-gray-400" />
             )}
           </button>
+
           <button
             onClick={() => onEdit(link.id)}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            className="p-2 hover:bg-gray-100 rounded-xl transition"
           >
             <Edit2 className="w-4 h-4 text-gray-600" />
           </button>
+
           <button
             onClick={() => onDelete(link.id)}
-            className="p-2 hover:bg-red-50 rounded-lg transition-colors"
+            className="p-2 hover:bg-red-50 rounded-xl transition"
           >
             <Trash2 className="w-4 h-4 text-red-600" />
           </button>

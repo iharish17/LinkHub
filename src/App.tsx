@@ -1,43 +1,76 @@
-import { useEffect, useState } from 'react';
-import { AuthProvider, useAuth } from './contexts/AuthContext';
-import { Auth } from './components/Auth';
-import { Dashboard } from './components/Dashboard';
-import { PublicProfile } from './components/PublicProfile';
+import { useEffect, useState } from "react";
+import { AuthProvider, useAuth } from "./contexts/AuthContext";
+import { Auth } from "./components/Auth";
+import { Dashboard } from "./components/Dashboard";
+import { PublicProfile } from "./components/PublicProfile";
+import { Toaster } from "react-hot-toast";
 
 function AppContent() {
   const { user, loading } = useAuth();
-  const [currentView, setCurrentView] = useState<'auth' | 'dashboard' | 'profile'>('auth');
+  const [currentView, setCurrentView] = useState<
+    "auth" | "dashboard" | "profile"
+  >("auth");
   const [username, setUsername] = useState<string | null>(null);
 
   useEffect(() => {
     const path = window.location.pathname;
 
-    if (path === '/' || path === '') {
-      setCurrentView(user ? 'dashboard' : 'auth');
+    if (path === "/" || path === "") {
+      setCurrentView(user ? "dashboard" : "auth");
     } else {
       const usernameFromPath = path.substring(1);
       setUsername(usernameFromPath);
-      setCurrentView('profile');
+      setCurrentView("profile");
     }
   }, [user]);
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center">
-        <div className="text-gray-600">Loading...</div>
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-indigo-50 flex items-center justify-center">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-10 h-10 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+          <div className="text-gray-700 font-medium">Loading...</div>
+        </div>
       </div>
     );
   }
 
-  if (currentView === 'profile' && username) {
-    return <PublicProfile username={username} />;
-  }
+  return (
+    <>
+      <Toaster
+        position="top-right"
+        reverseOrder={false}
+        toastOptions={{
+          duration: 4500,
+          style: {
+            fontSize: "16px",
+            padding: "14px 18px",
+            borderRadius: "14px",
+            minWidth: "300px",
+            background: "#111827",
+            color: "#fff",
+            boxShadow: "0px 10px 30px rgba(0,0,0,0.2)",
+          },
+          success: {
+            duration: 5000,
+          },
+          error: {
+            duration: 6000,
+          },
+        }}
+      />
 
-  if (currentView === 'dashboard' && user) {
-    return <Dashboard />;
-  }
-
-  return <Auth />;
+      <div className="animate-fadeIn">
+        {currentView === "profile" && username ? (
+          <PublicProfile username={username} />
+        ) : currentView === "dashboard" && user ? (
+          <Dashboard />
+        ) : (
+          <Auth />
+        )}
+      </div>
+    </>
+  );
 }
 
 function App() {

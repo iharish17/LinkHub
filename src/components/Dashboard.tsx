@@ -3,6 +3,7 @@ import { useAuth } from "../contexts/AuthContext";
 import { supabase } from "../lib/supabase";
 import { LinkManager } from "../components/LinkManager";
 import { LogOut, Copy, Check, ExternalLink } from "lucide-react";
+import toast from "react-hot-toast";
 
 interface Profile {
   id: string;
@@ -73,6 +74,8 @@ export function Dashboard() {
       setSaving(true);
       setError("");
 
+      const toastId = toast.loading("Saving profile...");
+
       const { error } = await supabase
         .from("profiles")
         .update({
@@ -84,9 +87,10 @@ export function Dashboard() {
 
       if (error) throw error;
 
-      alert("Profile Updated Successfully ✅");
+      toast.success("Profile Updated Successfully ✅", { id: toastId });
     } catch (err: any) {
       setError(err.message || "Error updating profile");
+      toast.error(err.message || "Error updating profile");
     } finally {
       setSaving(false);
     }
@@ -101,6 +105,7 @@ export function Dashboard() {
 
     await navigator.clipboard.writeText(profileUrl);
     setCopied(true);
+    toast.success("Link copied 📌");
 
     setTimeout(() => setCopied(false), 2000);
   };
@@ -112,21 +117,29 @@ export function Dashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p className="text-gray-600">Loading profile...</p>
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-indigo-50 flex items-center justify-center">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-10 h-10 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+          <p className="text-gray-700 font-medium">Loading profile...</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white shadow-sm border-b border-gray-200">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-indigo-50">
+      <header className="bg-white/80 backdrop-blur-xl border-b border-gray-200 sticky top-0 z-10">
         <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
-          <h1 className="text-xl font-bold text-gray-900">Dashboard</h1>
+          <div>
+            <h1 className="text-xl font-extrabold text-gray-900">Dashboard</h1>
+            <p className="text-xs text-gray-500">
+              Manage your profile & links easily ✨
+            </p>
+          </div>
 
           <button
             onClick={signOut}
-            className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 transition"
+            className="flex items-center gap-2 text-sm px-4 py-2 rounded-xl bg-gray-100 hover:bg-gray-200 transition font-semibold text-gray-700"
           >
             <LogOut className="w-4 h-4" />
             Logout
@@ -134,19 +147,20 @@ export function Dashboard() {
         </div>
       </header>
 
-      <main className="max-w-6xl mx-auto px-4 py-8 grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-1 bg-white p-6 rounded-2xl shadow">
-          <h2 className="text-lg font-semibold mb-4">Profile Settings</h2>
+      <main className="max-w-6xl mx-auto px-4 py-10 grid grid-cols-1 lg:grid-cols-3 gap-6 animate-fadeIn">
+        <div className="lg:col-span-1 bg-white/80 backdrop-blur-xl p-6 rounded-3xl shadow-lg border border-gray-200">
+          <h2 className="text-lg font-bold text-gray-900 mb-4">
+            Profile Settings
+          </h2>
 
           {error && (
-            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm animate-fadeIn">
               {error}
             </div>
           )}
 
-          {/* Username Editable */}
           <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-semibold text-gray-700 mb-1">
               Username
             </label>
 
@@ -160,7 +174,7 @@ export function Dashboard() {
                     : prev
                 )
               }
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-4 focus:ring-indigo-200 focus:border-indigo-500 outline-none transition-all"
               placeholder="username"
             />
 
@@ -169,47 +183,45 @@ export function Dashboard() {
             </p>
           </div>
 
-          {/* Display Name */}
           <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-semibold text-gray-700 mb-1">
               Display Name
             </label>
+
             <input
               type="text"
               value={displayName}
               onChange={(e) => setDisplayName(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-4 focus:ring-indigo-200 focus:border-indigo-500 outline-none transition-all"
               placeholder="Your name"
             />
           </div>
 
-          {/* Bio */}
           <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-semibold text-gray-700 mb-1">
               Bio
             </label>
+
             <textarea
               value={bio}
               onChange={(e) => setBio(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-4 focus:ring-indigo-200 focus:border-indigo-500 outline-none transition-all"
               placeholder="Write something about you..."
               rows={3}
             />
           </div>
 
-          {/* Save Button */}
           <button
             onClick={handleSaveProfile}
             disabled={saving}
-            className="w-full py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50 transition"
+            className="w-full py-3 rounded-xl font-semibold bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg hover:shadow-xl hover:scale-[1.01] active:scale-[0.98] transition-all duration-300 disabled:opacity-50"
           >
             {saving ? "Saving..." : "Save Profile"}
           </button>
 
-          {/* Profile URL */}
           {profileUrl && (
             <div className="mt-6">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-semibold text-gray-700 mb-1">
                 Your Profile Link
               </label>
 
@@ -218,12 +230,12 @@ export function Dashboard() {
                   type="text"
                   value={profileUrl}
                   readOnly
-                  className="flex-1 px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-gray-600 text-sm"
+                  className="flex-1 px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-700 text-sm"
                 />
 
                 <button
                   onClick={copyToClipboard}
-                  className="px-3 py-2 bg-gray-100 border border-gray-200 rounded-lg hover:bg-gray-200 transition"
+                  className="px-3 py-2 bg-gray-100 border border-gray-200 rounded-xl hover:bg-gray-200 transition"
                   title="Copy Link"
                 >
                   {copied ? (
@@ -234,10 +246,9 @@ export function Dashboard() {
                 </button>
               </div>
 
-              {/* View Public Profile Button */}
               <button
                 onClick={handleViewProfile}
-                className="mt-3 w-full flex items-center justify-center gap-2 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition"
+                className="mt-3 w-full flex items-center justify-center gap-2 py-3 rounded-xl font-semibold bg-gray-900 text-white hover:bg-gray-800 transition"
               >
                 <ExternalLink className="w-4 h-4" />
                 View Public Profile
@@ -246,7 +257,6 @@ export function Dashboard() {
           )}
         </div>
 
-        {/* Link Manager */}
         <div className="lg:col-span-2">
           {user?.id && <LinkManager userId={user.id} />}
         </div>
