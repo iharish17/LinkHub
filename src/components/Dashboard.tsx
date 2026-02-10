@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import { supabase } from "../lib/supabase";
 import { LinkManager } from "../components/LinkManager";
-import { LogOut, Copy, Check, ExternalLink } from "lucide-react";
+import { LogOut, Copy, Check, ExternalLink, Upload } from "lucide-react";
 import toast from "react-hot-toast";
 
 interface Profile {
@@ -22,6 +22,7 @@ export function Dashboard() {
   const [saving, setSaving] = useState(false);
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState("");
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
 
   useEffect(() => {
     if (user) fetchProfile();
@@ -64,9 +65,7 @@ export function Dashboard() {
     }
 
     if (!/^[a-zA-Z0-9_-]+$/.test(profile.username)) {
-      setError(
-        "Username can only contain letters, numbers, underscores, and hyphens"
-      );
+      setError("Username can only contain letters, numbers, underscores, and hyphens");
       return;
     }
 
@@ -88,6 +87,7 @@ export function Dashboard() {
       if (error) throw error;
 
       toast.success("Profile Updated Successfully ✅", { id: toastId });
+      await fetchProfile();
     } catch (err: any) {
       setError(err.message || "Error updating profile");
       toast.error(err.message || "Error updating profile");
@@ -112,7 +112,68 @@ export function Dashboard() {
 
   const handleViewProfile = () => {
     if (!profileUrl) return;
-    window.open(profileUrl, "_blank");
+
+    // open in same tab
+    window.location.href = profileUrl;
+  };
+
+  // ✅ Avatar Upload Handler
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    try {
+      if (!e.target.files || e.target.files.length === 0) return;
+
+      const file = e.target.files[0];
+
+      if (!file.type.startsWith("image/")) {
+        toast.error("Please upload a valid image file");
+        return;
+      }
+
+      if (file.size > 2 * 1024 * 1024) {
+        toast.error("Image size must be less than 2MB");
+        return;
+      }
+
+      if (!user?.id) return;
+
+      setUploadingAvatar(true);
+      const toastId = toast.loading("Uploading avatar...");
+
+      const fileExt = file.name.split(".").pop();
+      const fileName = `${user.id}-${Date.now()}.${fileExt}`;
+      const filePath = `${user.id}/${fileName}`;
+
+      // Upload image to storage
+      const { error: uploadError } = await supabase.storage
+        .from("avatars")
+        .upload(filePath, file, {
+          cacheControl: "3600",
+          upsert: true,
+        });
+
+      if (uploadError) throw uploadError;
+
+      // Get public url
+      const { data } = supabase.storage.from("avatars").getPublicUrl(filePath);
+
+      const avatarUrl = data.publicUrl;
+
+      // Save url to profile
+      const { error: updateError } = await supabase
+        .from("profiles")
+        .update({ avatar_url: avatarUrl })
+        .eq("id", user.id);
+
+      if (updateError) throw updateError;
+
+      toast.success("Avatar updated successfully 🎉", { id: toastId });
+
+      setProfile((prev) => (prev ? { ...prev, avatar_url: avatarUrl } : prev));
+    } catch (err: any) {
+      toast.error(err.message || "Failed to upload avatar ❌");
+    } finally {
+      setUploadingAvatar(false);
+    }
   };
 
   if (loading) {
@@ -132,13 +193,23 @@ export function Dashboard() {
         <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
           <div>
             <h1 className="text-xl font-extrabold text-gray-900">Dashboard</h1>
-            <p className="text-xs text-gray-500">
-              Manage your profile & links easily ✨
-            </p>
+            <p className="text-xs text-gray-500">Manage your profile & links easily ✨</p>
           </div>
 
           <button
-            onClick={signOut}
+            onClick={async () => {
+              try {
+                const toastId = toast.loading("Logging out...");
+
+                await signOut();
+
+                toast.success("Logged out successfully 👋", { id: toastId });
+
+                window.location.href = "/";
+              } catch (err: any) {
+                toast.error(err.message || "Logout failed ❌");
+              }
+            }}
             className="flex items-center gap-2 text-sm px-4 py-2 rounded-xl bg-gray-100 hover:bg-gray-200 transition font-semibold text-gray-700"
           >
             <LogOut className="w-4 h-4" />
@@ -149,9 +220,7 @@ export function Dashboard() {
 
       <main className="max-w-6xl mx-auto px-4 py-10 grid grid-cols-1 lg:grid-cols-3 gap-6 animate-fadeIn">
         <div className="lg:col-span-1 bg-white/80 backdrop-blur-xl p-6 rounded-3xl shadow-lg border border-gray-200">
-          <h2 className="text-lg font-bold text-gray-900 mb-4">
-            Profile Settings
-          </h2>
+          <h2 className="text-lg font-bold text-gray-900 mb-4">Profile Settings</h2>
 
           {error && (
             <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm animate-fadeIn">
@@ -159,6 +228,42 @@ export function Dashboard() {
             </div>
           )}
 
+          {/* Avatar Section */}
+          <div className="flex flex-col items-center mb-6">
+            <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-indigo-200 shadow-md bg-gray-100 flex items-center justify-center">
+              {profile?.avatar_url ? (
+                <img
+                  src={profile.avatar_url}
+                  alt="avatar"
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <span className="text-3xl font-extrabold text-indigo-600">
+                  {profile?.display_name?.[0]?.toUpperCase() ||
+                    profile?.username?.[0]?.toUpperCase() ||
+                    "U"}
+                </span>
+              )}
+            </div>
+
+            <label className="mt-4 cursor-pointer inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-xl font-semibold hover:bg-indigo-700 transition">
+              <Upload className="w-4 h-4" />
+              {uploadingAvatar ? "Uploading..." : "Upload Photo"}
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleAvatarUpload}
+                className="hidden"
+                disabled={uploadingAvatar}
+              />
+            </label>
+
+            <p className="text-xs text-gray-500 mt-2">
+              JPG/PNG only. Max 2MB.
+            </p>
+          </div>
+
+          {/* Username */}
           <div className="mb-4">
             <label className="block text-sm font-semibold text-gray-700 mb-1">
               Username
@@ -183,6 +288,7 @@ export function Dashboard() {
             </p>
           </div>
 
+          {/* Display Name */}
           <div className="mb-4">
             <label className="block text-sm font-semibold text-gray-700 mb-1">
               Display Name
@@ -197,6 +303,7 @@ export function Dashboard() {
             />
           </div>
 
+          {/* Bio */}
           <div className="mb-4">
             <label className="block text-sm font-semibold text-gray-700 mb-1">
               Bio
@@ -211,6 +318,7 @@ export function Dashboard() {
             />
           </div>
 
+          {/* Save Button */}
           <button
             onClick={handleSaveProfile}
             disabled={saving}
@@ -219,6 +327,7 @@ export function Dashboard() {
             {saving ? "Saving..." : "Save Profile"}
           </button>
 
+          {/* Profile URL */}
           {profileUrl && (
             <div className="mt-6">
               <label className="block text-sm font-semibold text-gray-700 mb-1">
