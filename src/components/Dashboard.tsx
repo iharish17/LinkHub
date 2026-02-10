@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import { supabase } from "../lib/supabase";
 import { LinkManager } from "../components/LinkManager";
-import { LogOut, Copy, Check, ExternalLink, Upload } from "lucide-react";
+import { LogOut, Copy, Check, ExternalLink, Upload, Trash2 } from "lucide-react";
 import toast from "react-hot-toast";
 
 interface Profile {
@@ -15,6 +15,7 @@ interface Profile {
 
 export function Dashboard() {
   const { user, signOut } = useAuth();
+
   const [profile, setProfile] = useState<Profile | null>(null);
   const [displayName, setDisplayName] = useState("");
   const [bio, setBio] = useState("");
@@ -65,7 +66,9 @@ export function Dashboard() {
     }
 
     if (!/^[a-zA-Z0-9_-]+$/.test(profile.username)) {
-      setError("Username can only contain letters, numbers, underscores, and hyphens");
+      setError(
+        "Username can only contain letters, numbers, underscores, and hyphens"
+      );
       return;
     }
 
@@ -112,8 +115,6 @@ export function Dashboard() {
 
   const handleViewProfile = () => {
     if (!profileUrl) return;
-
-    // open in same tab
     window.location.href = profileUrl;
   };
 
@@ -125,12 +126,12 @@ export function Dashboard() {
       const file = e.target.files[0];
 
       if (!file.type.startsWith("image/")) {
-        toast.error("Please upload a valid image file");
+        toast.error("Please upload a valid image file ❌");
         return;
       }
 
       if (file.size > 2 * 1024 * 1024) {
-        toast.error("Image size must be less than 2MB");
+        toast.error("Image size must be less than 2MB ❌");
         return;
       }
 
@@ -140,10 +141,10 @@ export function Dashboard() {
       const toastId = toast.loading("Uploading avatar...");
 
       const fileExt = file.name.split(".").pop();
-      const fileName = `${user.id}-${Date.now()}.${fileExt}`;
+      const fileName = `${Date.now()}.${fileExt}`;
       const filePath = `${user.id}/${fileName}`;
 
-      // Upload image to storage
+      // Upload to storage
       const { error: uploadError } = await supabase.storage
         .from("avatars")
         .upload(filePath, file, {
@@ -153,12 +154,12 @@ export function Dashboard() {
 
       if (uploadError) throw uploadError;
 
-      // Get public url
+      // Get Public URL
       const { data } = supabase.storage.from("avatars").getPublicUrl(filePath);
 
       const avatarUrl = data.publicUrl;
 
-      // Save url to profile
+      // Update DB
       const { error: updateError } = await supabase
         .from("profiles")
         .update({ avatar_url: avatarUrl })
@@ -173,6 +174,54 @@ export function Dashboard() {
       toast.error(err.message || "Failed to upload avatar ❌");
     } finally {
       setUploadingAvatar(false);
+    }
+  };
+
+  // ✅ Delete Avatar Handler (FIXED)
+  const handleDeleteAvatar = async () => {
+    if (!profile?.avatar_url) {
+      toast.error("No avatar to delete ❌");
+      return;
+    }
+
+    if (!confirm("Are you sure you want to delete your avatar?")) return;
+
+    try {
+      const toastId = toast.loading("Deleting avatar...");
+
+      // Extract file path from URL
+      // Example URL:
+      // https://xyz.supabase.co/storage/v1/object/public/avatars/userid/file.png
+      const splitUrl = profile.avatar_url.split("/avatars/");
+
+      if (splitUrl.length < 2) {
+        toast.error("Invalid avatar URL ❌", { id: toastId });
+        return;
+      }
+
+      const filePath = splitUrl[1]; // userId/file.png
+
+      // Delete from bucket
+      const { error: deleteError } = await supabase.storage
+        .from("avatars")
+        .remove([filePath]);
+
+      if (deleteError) throw deleteError;
+
+      // Update DB
+      const { error: updateError } = await supabase
+        .from("profiles")
+        .update({ avatar_url: "" })
+        .eq("id", user?.id);
+
+      if (updateError) throw updateError;
+
+      // Update UI
+      setProfile((prev) => (prev ? { ...prev, avatar_url: "" } : prev));
+
+      toast.success("Avatar deleted successfully 🗑️", { id: toastId });
+    } catch (err: any) {
+      toast.error(err.message || "Failed to delete avatar ❌");
     }
   };
 
@@ -193,7 +242,9 @@ export function Dashboard() {
         <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
           <div>
             <h1 className="text-xl font-extrabold text-gray-900">Dashboard</h1>
-            <p className="text-xs text-gray-500">Manage your profile & links easily ✨</p>
+            <p className="text-xs text-gray-500">
+              Manage your profile & links easily ✨
+            </p>
           </div>
 
           <button
@@ -208,7 +259,9 @@ export function Dashboard() {
 
       <main className="max-w-6xl mx-auto px-4 py-10 grid grid-cols-1 lg:grid-cols-3 gap-6 animate-fadeIn">
         <div className="lg:col-span-1 bg-white/80 backdrop-blur-xl p-6 rounded-3xl shadow-lg border border-gray-200">
-          <h2 className="text-lg font-bold text-gray-900 mb-4">Profile Settings</h2>
+          <h2 className="text-lg font-bold text-gray-900 mb-4">
+            Profile Settings
+          </h2>
 
           {error && (
             <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm animate-fadeIn">
@@ -249,6 +302,16 @@ export function Dashboard() {
             <p className="text-xs text-gray-500 mt-2">
               JPG/PNG only. Max 2MB.
             </p>
+
+            {profile?.avatar_url && (
+              <button
+                onClick={handleDeleteAvatar}
+                className="mt-4 w-full flex items-center justify-center gap-2 py-3 rounded-xl font-semibold bg-red-600 text-white hover:bg-red-700 transition"
+              >
+                <Trash2 className="w-4 h-4" />
+                Delete Avatar
+              </button>
+            )}
           </div>
 
           {/* Username */}
