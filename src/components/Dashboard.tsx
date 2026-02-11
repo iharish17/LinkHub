@@ -189,9 +189,6 @@ export function Dashboard() {
     try {
       const toastId = toast.loading("Deleting avatar...");
 
-      // Extract file path from URL
-      // Example URL:
-      // https://xyz.supabase.co/storage/v1/object/public/avatars/userid/file.png
       const splitUrl = profile.avatar_url.split("/avatars/");
 
       if (splitUrl.length < 2) {
@@ -246,14 +243,23 @@ export function Dashboard() {
               Manage your profile & links easily ✨
             </p>
           </div>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={handleViewProfile}
+              className="flex items-center gap-1 text-sm px-4 py-2 rounded-xl font-semibold bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:bg-gray-800 transition"
+            >
+              <ExternalLink className="w-4 h-4" />
+              View Public Profile
+            </button>
 
-          <button
-            onClick={signOut}
-            className="flex items-center gap-2 text-sm px-4 py-2 rounded-xl bg-gray-100 hover:bg-gray-200 transition font-semibold text-gray-700"
-          >
-            <LogOut className="w-4 h-4" />
-            Logout
-          </button>
+            <button
+              onClick={signOut}
+              className="flex items-center gap-2 text-sm px-4 py-2 rounded-xl bg-gray-100 hover:bg-gray-200 transition font-semibold text-gray-700"
+            >
+              <LogOut className="w-4 h-4" />
+              Logout
+            </button>
+          </div>
         </div>
       </header>
 
@@ -287,9 +293,9 @@ export function Dashboard() {
               )}
             </div>
 
-            <label className="mt-4 cursor-pointer inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-xl font-semibold hover:bg-indigo-700 transition">
+            <label className="mt-4 cursor-pointer inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl font-semibold hover:bg-indigo-700 transition">
               <Upload className="w-4 h-4" />
-              {uploadingAvatar ? "Uploading..." : "Upload Photo"}
+              {uploadingAvatar ? "Uploading..." : "Upload Avatar"}
               <input
                 type="file"
                 accept="image/*"
@@ -406,13 +412,6 @@ export function Dashboard() {
                 </button>
               </div>
 
-              <button
-                onClick={handleViewProfile}
-                className="mt-3 w-full flex items-center justify-center gap-2 py-3 rounded-xl font-semibold bg-gray-900 text-white hover:bg-gray-800 transition"
-              >
-                <ExternalLink className="w-4 h-4" />
-                View Public Profile
-              </button>
             </div>
           )}
         </div>

@@ -10,7 +10,7 @@ import {
   EyeOff,
   ArrowUp,
   ArrowDown,
-  Globe,
+  Sparkles,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { FaXTwitter } from "react-icons/fa6";
@@ -19,43 +19,48 @@ import {
   FaLinkedin,
   FaInstagram,
   FaYoutube,
+  FaFacebook,
+  FaSnapchatGhost,
+  FaDiscord,
+  FaTelegram,
+  FaWhatsapp,
+  FaGlobe,
+  FaPinterest,
+  FaTiktok,
+  FaReddit,
+  FaMedium,
+  FaStackOverflow,
+  FaGoogleDrive,
 } from "react-icons/fa";
 
 type LinkManagerProps = {
   userId: string;
 };
 
-const popularLinks = [
-  {
-    title: "LinkedIn",
-    url: "https://linkedin.com/in/",
-    icon: <FaLinkedin className="w-5 h-5 text-blue-600" />,
-  },
-  {
-    title: "GitHub",
-    url: "https://github.com/",
-    icon: <FaGithub className="w-5 h-5 text-gray-800" />,
-  },
-  {
-    title: "Instagram",
-    url: "https://instagram.com/",
-    icon: <FaInstagram className="w-5 h-5 text-pink-600" />,
-  },
-  {
-    title: "YouTube",
-    url: "https://youtube.com/",
-    icon: <FaYoutube className="w-5 h-5 text-red-600" />,
-  },
-  {
-    title: "Twitter / X",
-    url: "https://twitter.com/",
-    icon: <FaXTwitter className="w-5 h-5 text-black" />,
-  },
-  {
-    title: "Portfolio",
-    url: "https://",
-    icon: <Globe className="w-5 h-5 text-green-600" />,
-  },
+type PopularLink = {
+  name: string;
+  url: string;
+  icon: JSX.Element;
+};
+
+const popularLinks: PopularLink[] = [
+  { name: "GitHub", url: "https://github.com/", icon: <FaGithub className="text-black w-5 h-5" /> },
+  { name: "LinkedIn", url: "https://linkedin.com/in/", icon: <FaLinkedin className="text-blue-600 w-5 h-5" /> },
+  { name: "Instagram", url: "https://instagram.com/", icon: <FaInstagram className="text-pink-600 w-5 h-5" /> },
+  { name: "YouTube", url: "https://youtube.com/", icon: <FaYoutube className="text-red-600 w-5 h-5" /> },
+  { name: "Facebook", url: "https://facebook.com/", icon: <FaFacebook className="text-blue-700 w-5 h-5" /> },
+  { name: "Twitter", url: "https://twitter.com/", icon: <FaXTwitter className="text-black w-5 h-5" /> },
+  { name: "TikTok", url: "https://tiktok.com/@", icon: <FaTiktok className="text-black w-5 h-5" /> },
+  { name: "Pinterest", url: "https://pinterest.com/", icon: <FaPinterest className="text-red-500 w-5 h-5" /> },
+  { name: "Reddit", url: "https://reddit.com/user/", icon: <FaReddit className="text-orange-600 w-5 h-5" /> },
+  { name: "Snapchat", url: "https://snapchat.com/add/", icon: <FaSnapchatGhost className="text-yellow-400 w-5 h-5" /> },
+  { name: "Discord", url: "https://discord.gg/", icon: <FaDiscord className="text-indigo-600 w-5 h-5" /> },
+  { name: "Telegram", url: "https://t.me/", icon: <FaTelegram className="text-sky-600 w-5 h-5" /> },
+  { name: "WhatsApp", url: "https://wa.me/", icon: <FaWhatsapp className="text-green-600 w-5 h-5" /> },
+  { name: "Medium", url: "https://medium.com/@", icon: <FaMedium className="text-black w-5 h-5" /> },
+  { name: "Stack Overflow", url: "https://stackoverflow.com/users/", icon: <FaStackOverflow className="text-orange-500 w-5 h-5" /> },
+  { name: "Google Drive", url: "https://drive.google.com/", icon: <FaGoogleDrive className="text-green-600 w-5 h-5" /> },
+  { name: "Portfolio Website", url: "https://", icon: <FaGlobe className="text-green-600 w-5 h-5" /> },
 ];
 
 export function LinkManager({ userId }: LinkManagerProps) {
@@ -63,6 +68,7 @@ export function LinkManager({ userId }: LinkManagerProps) {
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
+  const [showPopularModal, setShowPopularModal] = useState(false);
   const [formData, setFormData] = useState({ title: "", url: "" });
 
   useEffect(() => {
@@ -81,6 +87,7 @@ export function LinkManager({ userId }: LinkManagerProps) {
       setLinks(data || []);
     } catch (error) {
       console.error("Error loading links:", error);
+      toast.error("Failed to load links ❌");
     } finally {
       setLoading(false);
     }
@@ -174,16 +181,11 @@ export function LinkManager({ userId }: LinkManagerProps) {
     newLinks[newIndex] = temp;
 
     try {
-      const updates = newLinks.map((link, idx) => ({
-        id: link.id,
-        position: idx,
-      }));
-
-      for (const update of updates) {
+      for (let i = 0; i < newLinks.length; i++) {
         await supabase
           .from("links")
-          .update({ position: update.position })
-          .eq("id", update.id);
+          .update({ position: i })
+          .eq("id", newLinks[i].id);
       }
 
       await loadLinks();
@@ -193,11 +195,16 @@ export function LinkManager({ userId }: LinkManagerProps) {
     }
   };
 
-  const handleSelectPopularLink = (title: string, url: string) => {
-    setShowAddForm(true);
-    setFormData({ title, url });
+  const handleSelectPopular = (link: PopularLink) => {
+    setFormData({
+      title: link.name,
+      url: link.url,
+    });
 
-    toast.success(`${title} selected 🚀`);
+    setShowPopularModal(false);
+    setShowAddForm(true);
+
+    toast.success(`${link.name} selected ✅`);
   };
 
   if (loading) {
@@ -210,7 +217,7 @@ export function LinkManager({ userId }: LinkManagerProps) {
 
   return (
     <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-lg border border-gray-200 p-6 animate-fadeIn">
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
         <div>
           <h2 className="text-xl font-extrabold text-gray-900">Your Links</h2>
           <p className="text-xs text-gray-500">
@@ -218,35 +225,59 @@ export function LinkManager({ userId }: LinkManagerProps) {
           </p>
         </div>
 
-        <button
-          onClick={() => setShowAddForm(!showAddForm)}
-          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 font-semibold"
-        >
-          <Plus className="w-4 h-4" />
-          Add Link
-        </button>
-      </div>
+        <div className="flex gap-2">
+          <button
+            onClick={() => setShowPopularModal(true)}
+            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow hover:bg-gray-800 transition-all font-semibold"
+          >
+            <Sparkles className="w-4 h-4" />
+            Popular Links
+          </button>
 
-      {/* Popular Links Section */}
-      <div className="mb-6">
-        <h3 className="text-sm font-bold text-gray-800 mb-3">
-          Popular Links (Quick Add)
-        </h3>
-
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-          {popularLinks.map((item) => (
-            <button
-              key={item.title}
-              onClick={() => handleSelectPopularLink(item.title, item.url)}
-              className="flex items-center gap-2 px-3 py-2 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 hover:shadow-md transition-all duration-200 font-semibold text-gray-800"
-            >
-              {item.icon}
-              <span className="text-sm">{item.title}</span>
-            </button>
-          ))}
+          <button
+            onClick={() => setShowAddForm(!showAddForm)}
+            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 font-semibold"
+          >
+            <Plus className="w-4 h-4" />
+            Add Link
+          </button>
         </div>
       </div>
 
+      {/* Popular Links Modal */}
+      {showPopularModal && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 px-4">
+          <div className="bg-white w-full max-w-xl rounded-3xl shadow-2xl border border-gray-200 p-6 animate-fadeIn">
+            <div className="flex items-center justify-between mb-5">
+              <h3 className="text-xl font-extrabold text-gray-900">
+                Popular Links
+              </h3>
+
+              <button
+                onClick={() => setShowPopularModal(false)}
+                className="p-2 rounded-xl hover:bg-gray-100 transition"
+              >
+                <X className="w-5 h-5 text-gray-700" />
+              </button>
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              {popularLinks.map((link) => (
+                <button
+                  key={link.name}
+                  onClick={() => handleSelectPopular(link)}
+                  className="flex items-center gap-3 p-3 rounded-2xl border border-gray-200 hover:border-indigo-400 hover:bg-indigo-50 transition font-semibold text-gray-800"
+                >
+                  <div className="p-2 rounded-xl bg-gray-100">{link.icon}</div>
+                  <span className="text-sm">{link.name}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add Link Form */}
       {showAddForm && (
         <form
           onSubmit={handleAddLink}

@@ -2,7 +2,23 @@ import { useState, useEffect } from "react";
 import { supabase, Profile, Link } from "../lib/supabase";
 import { ExternalLink, Link2, Globe } from "lucide-react";
 import { FaXTwitter } from "react-icons/fa6";
-import { FaGithub, FaLinkedin, FaInstagram, FaYoutube } from "react-icons/fa";
+import {
+  FaGithub,
+  FaLinkedin,
+  FaInstagram,
+  FaYoutube,
+  FaFacebook,
+  FaSnapchatGhost,
+  FaDiscord,
+  FaTelegram,
+  FaWhatsapp,
+  FaPinterest,
+  FaTiktok,
+  FaReddit,
+  FaMedium,
+  FaStackOverflow,
+  FaGoogleDrive,
+} from "react-icons/fa";
 
 type PublicProfileProps = {
   username: string;
@@ -60,32 +76,45 @@ export function PublicProfile({ username }: PublicProfileProps) {
     }
   };
 
-  // Detect icon based on URL
   const getLinkIcon = (url: string) => {
     const lower = url.toLowerCase();
 
-    if (lower.includes("github.com")) {
+    if (lower.includes("github.com")) 
       return <FaGithub className="w-5 h-5 text-gray-800" />;
-    }
-
-    if (lower.includes("linkedin.com")) {
+    if (lower.includes("linkedin.com")) 
       return <FaLinkedin className="w-5 h-5 text-blue-600" />;
-    }
-
-    if (lower.includes("instagram.com")) {
+    if (lower.includes("instagram.com")) 
       return <FaInstagram className="w-5 h-5 text-pink-600" />;
-    }
-
-    if (lower.includes("youtube.com") || lower.includes("youtu.be")) {
+    if (lower.includes("youtube.com") || lower.includes("youtu.be"))
       return <FaYoutube className="w-5 h-5 text-red-600" />;
-    }
-
-    if (lower.includes("twitter.com") || lower.includes("x.com")) {
+    if (lower.includes("facebook.com")) 
+      return <FaFacebook className="w-5 h-5 text-blue-700" />;
+    if (lower.includes("snapchat.com")) 
+      return <FaSnapchatGhost className="w-5 h-5 text-yellow-500" />;
+    if (lower.includes("discord.gg") || lower.includes("discord.com"))
+      return <FaDiscord className="w-5 h-5 text-indigo-600" />;
+    if (lower.includes("telegram.me") || lower.includes("t.me"))
+      return <FaTelegram className="w-5 h-5 text-blue-500" />;
+    if (lower.includes("whatsapp.com") || lower.includes("wa.me"))
+      return <FaWhatsapp className="w-5 h-5 text-green-600" />;
+    if (lower.includes("pinterest.com")) 
+      return <FaPinterest className="w-5 h-5 text-red-600" />;
+    if (lower.includes("tiktok.com")) 
+      return <FaTiktok className="w-5 h-5 text-black" />;
+    if (lower.includes("reddit.com")) 
+      return <FaReddit className="w-5 h-5 text-orange-600" />;
+    if (lower.includes("medium.com")) 
+      return <FaMedium className="w-5 h-5 text-black" />;
+    if (lower.includes("stackoverflow.com")) 
+      return <FaStackOverflow className="w-5 h-5 text-orange-500" />;
+    if (lower.includes("drive.google.com")) 
+      return <FaGoogleDrive className="w-5 h-5 text-green-500" />;
+    if (lower.includes("twitter.com") || lower.includes("x.com"))
       return <FaXTwitter className="w-5 h-5 text-black" />;
-    }
 
     return <Globe className="w-5 h-5 text-green-600" />;
   };
+
 
   const getInitials = () => {
     return (
@@ -100,7 +129,7 @@ export function PublicProfile({ username }: PublicProfileProps) {
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-indigo-50 flex items-center justify-center">
         <div className="flex flex-col items-center gap-3">
           <div className="w-10 h-10 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
-          <div className="text-gray-700 font-medium">Loading profile...</div>
+          <div className="text-gray-700 font-medium">Loading public profile...</div>
         </div>
       </div>
     );
