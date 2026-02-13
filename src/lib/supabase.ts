@@ -24,8 +24,10 @@ export type Link = {
   user_id: string;
   title: string;
   url: string;
+  platform: string;   // ✅ NEW FIELD
   position: number;
   is_active: boolean;
   created_at: string;
   updated_at: string;
 };
+

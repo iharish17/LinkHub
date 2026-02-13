@@ -40,27 +40,113 @@ type LinkManagerProps = {
 type PopularLink = {
   name: string;
   url: string;
+  platform: string;
   icon: JSX.Element;
 };
 
 const popularLinks: PopularLink[] = [
-  { name: "GitHub", url: "https://github.com/", icon: <FaGithub className="text-black w-5 h-5" /> },
-  { name: "LinkedIn", url: "https://linkedin.com/in/", icon: <FaLinkedin className="text-blue-600 w-5 h-5" /> },
-  { name: "Instagram", url: "https://instagram.com/", icon: <FaInstagram className="text-pink-600 w-5 h-5" /> },
-  { name: "YouTube", url: "https://youtube.com/", icon: <FaYoutube className="text-red-600 w-5 h-5" /> },
-  { name: "Facebook", url: "https://facebook.com/", icon: <FaFacebook className="text-blue-700 w-5 h-5" /> },
-  { name: "Twitter", url: "https://twitter.com/", icon: <FaXTwitter className="text-black w-5 h-5" /> },
-  { name: "TikTok", url: "https://tiktok.com/@", icon: <FaTiktok className="text-black w-5 h-5" /> },
-  { name: "Pinterest", url: "https://pinterest.com/", icon: <FaPinterest className="text-red-500 w-5 h-5" /> },
-  { name: "Reddit", url: "https://reddit.com/user/", icon: <FaReddit className="text-orange-600 w-5 h-5" /> },
-  { name: "Snapchat", url: "https://snapchat.com/add/", icon: <FaSnapchatGhost className="text-yellow-400 w-5 h-5" /> },
-  { name: "Discord", url: "https://discord.gg/", icon: <FaDiscord className="text-indigo-600 w-5 h-5" /> },
-  { name: "Telegram", url: "https://t.me/", icon: <FaTelegram className="text-sky-600 w-5 h-5" /> },
-  { name: "WhatsApp", url: "https://wa.me/", icon: <FaWhatsapp className="text-green-600 w-5 h-5" /> },
-  { name: "Medium", url: "https://medium.com/@", icon: <FaMedium className="text-black w-5 h-5" /> },
-  { name: "Stack Overflow", url: "https://stackoverflow.com/users/", icon: <FaStackOverflow className="text-orange-500 w-5 h-5" /> },
-  { name: "Google Drive", url: "https://drive.google.com/", icon: <FaGoogleDrive className="text-green-600 w-5 h-5" /> },
-  { name: "Portfolio Website", url: "https://", icon: <FaGlobe className="text-green-600 w-5 h-5" /> },
+  {
+    name: "GitHub",
+    url: "https://github.com/",
+    platform: "github",
+    icon: <FaGithub className="text-black w-5 h-5" />,
+  },
+  {
+    name: "LinkedIn",
+    url: "https://linkedin.com/in/",
+    platform: "linkedin",
+    icon: <FaLinkedin className="text-blue-600 w-5 h-5" />,
+  },
+  {
+    name: "Instagram",
+    url: "https://instagram.com/",
+    platform: "instagram",
+    icon: <FaInstagram className="text-pink-600 w-5 h-5" />,
+  },
+  {
+    name: "YouTube",
+    url: "https://youtube.com/",
+    platform: "youtube",
+    icon: <FaYoutube className="text-red-600 w-5 h-5" />,
+  },
+  {
+    name: "Facebook",
+    url: "https://facebook.com/",
+    platform: "facebook",
+    icon: <FaFacebook className="text-blue-700 w-5 h-5" />,
+  },
+  {
+    name: "Twitter / X",
+    url: "https://twitter.com/",
+    platform: "twitter",
+    icon: <FaXTwitter className="text-black w-5 h-5" />,
+  },
+  {
+    name: "TikTok",
+    url: "https://tiktok.com/@",
+    platform: "tiktok",
+    icon: <FaTiktok className="text-black w-5 h-5" />,
+  },
+  {
+    name: "Pinterest",
+    url: "https://pinterest.com/",
+    platform: "pinterest",
+    icon: <FaPinterest className="text-red-500 w-5 h-5" />,
+  },
+  {
+    name: "Reddit",
+    url: "https://reddit.com/user/",
+    platform: "reddit",
+    icon: <FaReddit className="text-orange-600 w-5 h-5" />,
+  },
+  {
+    name: "Snapchat",
+    url: "https://snapchat.com/add/",
+    platform: "snapchat",
+    icon: <FaSnapchatGhost className="text-yellow-400 w-5 h-5" />,
+  },
+  {
+    name: "Discord",
+    url: "https://discord.gg/",
+    platform: "discord",
+    icon: <FaDiscord className="text-indigo-600 w-5 h-5" />,
+  },
+  {
+    name: "Telegram",
+    url: "https://t.me/",
+    platform: "telegram",
+    icon: <FaTelegram className="text-sky-600 w-5 h-5" />,
+  },
+  {
+    name: "WhatsApp",
+    url: "https://wa.me/",
+    platform: "whatsapp",
+    icon: <FaWhatsapp className="text-green-600 w-5 h-5" />,
+  },
+  {
+    name: "Medium",
+    url: "https://medium.com/@",
+    platform: "medium",
+    icon: <FaMedium className="text-black w-5 h-5" />,
+  },
+  {
+    name: "Stack Overflow",
+    url: "https://stackoverflow.com/users/",
+    platform: "stackoverflow",
+    icon: <FaStackOverflow className="text-orange-500 w-5 h-5" />,
+  },
+  {
+    name: "Google Drive",
+    url: "https://drive.google.com/",
+    platform: "googledrive",
+    icon: <FaGoogleDrive className="text-green-600 w-5 h-5" />,
+  },
+  {
+    name: "Portfolio Website",
+    url: "https://",
+    platform: "portfolio",
+    icon: <FaGlobe className="text-green-600 w-5 h-5" />,
+  },
 ];
 
 export function LinkManager({ userId }: LinkManagerProps) {
@@ -69,7 +155,12 @@ export function LinkManager({ userId }: LinkManagerProps) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
   const [showPopularModal, setShowPopularModal] = useState(false);
-  const [formData, setFormData] = useState({ title: "", url: "" });
+
+  const [formData, setFormData] = useState({
+    title: "",
+    url: "",
+    platform: "custom",
+  });
 
   useEffect(() => {
     loadLinks();
@@ -84,6 +175,7 @@ export function LinkManager({ userId }: LinkManagerProps) {
         .order("position", { ascending: true });
 
       if (error) throw error;
+
       setLinks(data || []);
     } catch (error) {
       console.error("Error loading links:", error);
@@ -111,6 +203,7 @@ export function LinkManager({ userId }: LinkManagerProps) {
         user_id: userId,
         title: formData.title,
         url: url,
+        platform: formData.platform,
         position: maxPosition + 1,
         is_active: true,
       });
@@ -119,7 +212,7 @@ export function LinkManager({ userId }: LinkManagerProps) {
 
       toast.success("Link added ✅", { id: toastId });
 
-      setFormData({ title: "", url: "" });
+      setFormData({ title: "", url: "", platform: "custom" });
       setShowAddForm(false);
       await loadLinks();
     } catch (error) {
@@ -199,6 +292,7 @@ export function LinkManager({ userId }: LinkManagerProps) {
     setFormData({
       title: link.name,
       url: link.url,
+      platform: link.platform,
     });
 
     setShowPopularModal(false);
@@ -316,6 +410,39 @@ export function LinkManager({ userId }: LinkManagerProps) {
               />
             </div>
 
+            {/* ✅ Platform Dropdown */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-1">
+                Platform
+              </label>
+              <select
+                value={formData.platform}
+                onChange={(e) =>
+                  setFormData({ ...formData, platform: e.target.value })
+                }
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl bg-white focus:ring-4 focus:ring-indigo-200 focus:border-indigo-500 outline-none transition-all"
+              >
+                <option value="custom">Custom</option>
+                <option value="github">GitHub</option>
+                <option value="linkedin">LinkedIn</option>
+                <option value="instagram">Instagram</option>
+                <option value="youtube">YouTube</option>
+                <option value="facebook">Facebook</option>
+                <option value="twitter">Twitter / X</option>
+                <option value="tiktok">TikTok</option>
+                <option value="pinterest">Pinterest</option>
+                <option value="reddit">Reddit</option>
+                <option value="snapchat">Snapchat</option>
+                <option value="discord">Discord</option>
+                <option value="telegram">Telegram</option>
+                <option value="whatsapp">WhatsApp</option>
+                <option value="medium">Medium</option>
+                <option value="stackoverflow">Stack Overflow</option>
+                <option value="googledrive">Google Drive</option>
+                <option value="portfolio">Portfolio</option>
+              </select>
+            </div>
+
             <div className="flex gap-2">
               <button
                 type="submit"
@@ -328,7 +455,7 @@ export function LinkManager({ userId }: LinkManagerProps) {
                 type="button"
                 onClick={() => {
                   setShowAddForm(false);
-                  setFormData({ title: "", url: "" });
+                  setFormData({ title: "", url: "", platform: "custom" });
                 }}
                 className="px-5 py-3 rounded-xl bg-gray-200 text-gray-800 font-semibold hover:bg-gray-300 transition"
               >

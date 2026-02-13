@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { supabase, Profile, Link } from "../lib/supabase";
 import { ExternalLink, Link2, Globe } from "lucide-react";
 import { FaXTwitter } from "react-icons/fa6";
@@ -30,12 +30,35 @@ export function PublicProfile({ username }: PublicProfileProps) {
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
 
-  // if avatar image fails to load
   const [avatarError, setAvatarError] = useState(false);
+
+  // logged in user id
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [authLoaded, setAuthLoaded] = useState(false);
+
+  // prevent duplicate view tracking
+  const viewTracked = useRef(false);
+
+  useEffect(() => {
+    const getCurrentUser = async () => {
+      const { data } = await supabase.auth.getUser();
+      setCurrentUserId(data?.user?.id || null);
+      setAuthLoaded(true);
+    };
+
+    getCurrentUser();
+  }, []);
 
   useEffect(() => {
     loadProfile();
+    viewTracked.current = false; // reset when username changes
   }, [username]);
+
+  useEffect(() => {
+    if (authLoaded && profile && !viewTracked.current) {
+      trackProfileView(profile);
+    }
+  }, [authLoaded, profile]);
 
   const loadProfile = async () => {
     try {
@@ -76,41 +99,72 @@ export function PublicProfile({ username }: PublicProfileProps) {
     }
   };
 
-  const getLinkIcon = (url: string) => {
-    const lower = url.toLowerCase();
+  // ✅ Track profile view only once and only if visitor is not owner
+  const trackProfileView = async (profileData: Profile) => {
+    if (viewTracked.current) return;
 
-    if (lower.includes("github.com")) 
-      return <FaGithub className="w-5 h-5 text-gray-800" />;
-    if (lower.includes("linkedin.com")) 
-      return <FaLinkedin className="w-5 h-5 text-blue-600" />;
-    if (lower.includes("instagram.com")) 
-      return <FaInstagram className="w-5 h-5 text-pink-600" />;
-    if (lower.includes("youtube.com") || lower.includes("youtu.be"))
-      return <FaYoutube className="w-5 h-5 text-red-600" />;
-    if (lower.includes("facebook.com")) 
-      return <FaFacebook className="w-5 h-5 text-blue-700" />;
-    if (lower.includes("snapchat.com")) 
-      return <FaSnapchatGhost className="w-5 h-5 text-yellow-500" />;
-    if (lower.includes("discord.gg") || lower.includes("discord.com"))
-      return <FaDiscord className="w-5 h-5 text-indigo-600" />;
-    if (lower.includes("telegram.me") || lower.includes("t.me"))
-      return <FaTelegram className="w-5 h-5 text-blue-500" />;
-    if (lower.includes("whatsapp.com") || lower.includes("wa.me"))
+    // don't track if owner
+    if (currentUserId === profileData.id) {
+      viewTracked.current = true;
+      return;
+    }
+
+    try {
+      await supabase.from("profile_views").insert({
+        profile_id: profileData.id,
+        user_agent: navigator.userAgent,
+      });
+
+      viewTracked.current = true;
+    } catch (error) {
+      console.error("Error tracking profile view:", error);
+    }
+  };
+
+  // ✅ Track Link Click only if visitor is not owner
+  const handleLinkClick = async (link: Link) => {
+    if (!profile) return;
+
+    if (currentUserId === profile.id) return;
+
+    try {
+      await supabase.from("link_clicks").insert({
+        link_id: link.id,
+        profile_id: profile.id,
+        user_agent: navigator.userAgent,
+      });
+    } catch (error) {
+      console.error("Error tracking link click:", error);
+    }
+  };
+
+  const getLinkIcon = (link: Link) => {
+    const platform = (link.platform || "custom").toLowerCase();
+    const lowerUrl = link.url.toLowerCase();
+
+    if (platform === "github") return <FaGithub className="w-5 h-5 text-gray-800" />;
+    if (platform === "linkedin") return <FaLinkedin className="w-5 h-5 text-blue-600" />;
+    if (platform === "instagram") return <FaInstagram className="w-5 h-5 text-pink-600" />;
+    if (platform === "youtube") return <FaYoutube className="w-5 h-5 text-red-600" />;
+    if (platform === "facebook") return <FaFacebook className="w-5 h-5 text-blue-700" />;
+    if (platform === "twitter") return <FaXTwitter className="w-5 h-5 text-black" />;
+    if (platform === "tiktok") return <FaTiktok className="w-5 h-5 text-black" />;
+    if (platform === "pinterest") return <FaPinterest className="w-5 h-5 text-red-600" />;
+    if (platform === "reddit") return <FaReddit className="w-5 h-5 text-orange-600" />;
+    if (platform === "snapchat") return <FaSnapchatGhost className="w-5 h-5 text-yellow-500" />;
+    if (platform === "discord") return <FaDiscord className="w-5 h-5 text-indigo-600" />;
+    if (platform === "telegram") return <FaTelegram className="w-5 h-5 text-blue-500" />;
+    if (platform === "whatsapp") return <FaWhatsapp className="w-5 h-5 text-green-600" />;
+    if (platform === "medium") return <FaMedium className="w-5 h-5 text-black" />;
+    if (platform === "stackoverflow") return <FaStackOverflow className="w-5 h-5 text-orange-500" />;
+    if (platform === "googledrive") return <FaGoogleDrive className="w-5 h-5 text-green-500" />;
+    if (platform === "portfolio") return <Globe className="w-5 h-5 text-green-600" />;
+
+    // fallback url detection
+    if (lowerUrl.includes("reddit.com")) return <FaReddit className="w-5 h-5 text-orange-600" />;
+    if (lowerUrl.includes("snapchat.com")) return <FaSnapchatGhost className="w-5 h-5 text-yellow-500" />;
+    if (lowerUrl.includes("wa.me") || lowerUrl.includes("whatsapp.com"))
       return <FaWhatsapp className="w-5 h-5 text-green-600" />;
-    if (lower.includes("pinterest.com")) 
-      return <FaPinterest className="w-5 h-5 text-red-600" />;
-    if (lower.includes("tiktok.com")) 
-      return <FaTiktok className="w-5 h-5 text-black" />;
-    if (lower.includes("reddit.com")) 
-      return <FaReddit className="w-5 h-5 text-orange-600" />;
-    if (lower.includes("medium.com")) 
-      return <FaMedium className="w-5 h-5 text-black" />;
-    if (lower.includes("stackoverflow.com")) 
-      return <FaStackOverflow className="w-5 h-5 text-orange-500" />;
-    if (lower.includes("drive.google.com")) 
-      return <FaGoogleDrive className="w-5 h-5 text-green-500" />;
-    if (lower.includes("twitter.com") || lower.includes("x.com"))
-      return <FaXTwitter className="w-5 h-5 text-black" />;
 
     return <Globe className="w-5 h-5 text-green-600" />;
   };
@@ -129,7 +183,9 @@ export function PublicProfile({ username }: PublicProfileProps) {
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-indigo-50 flex items-center justify-center">
         <div className="flex flex-col items-center gap-3">
           <div className="w-10 h-10 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
-          <div className="text-gray-700 font-medium">Loading public profile...</div>
+          <div className="text-gray-700 font-medium">
+            Loading public profile...
+          </div>
         </div>
       </div>
     );
@@ -157,7 +213,6 @@ export function PublicProfile({ username }: PublicProfileProps) {
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-indigo-50 py-12 px-4">
       <div className="max-w-2xl mx-auto animate-fadeIn">
         <div className="text-center mb-10">
-          {/* Avatar */}
           <div className="flex justify-center mb-4">
             {profile?.avatar_url && !avatarError ? (
               <img
@@ -190,7 +245,6 @@ export function PublicProfile({ username }: PublicProfileProps) {
           )}
         </div>
 
-        {/* Links */}
         <div className="space-y-4">
           {links.length === 0 ? (
             <div className="text-center py-12">
@@ -205,12 +259,13 @@ export function PublicProfile({ username }: PublicProfileProps) {
                 href={link.url}
                 target="_blank"
                 rel="noopener noreferrer"
+                onClick={() => handleLinkClick(link)}
                 className="block w-full p-5 bg-white/90 backdrop-blur-xl hover:bg-white border border-gray-200 hover:border-indigo-400 rounded-2xl transition-all duration-300 shadow-md hover:shadow-xl group hover:scale-[1.01]"
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className="p-2 rounded-xl bg-gray-100 group-hover:bg-indigo-50 transition">
-                      {getLinkIcon(link.url)}
+                      {getLinkIcon(link)}
                     </div>
 
                     <span className="text-lg font-bold text-gray-900 group-hover:text-indigo-600 transition-colors">

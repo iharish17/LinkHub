@@ -2,7 +2,16 @@ import { useEffect, useState } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import { supabase } from "../lib/supabase";
 import { LinkManager } from "../components/LinkManager";
-import { LogOut, Copy, Check, ExternalLink, Upload, Trash2 } from "lucide-react";
+import {
+  LogOut,
+  Copy,
+  Check,
+  ExternalLink,
+  Upload,
+  Trash2,
+  Eye,
+  MousePointerClick,
+} from "lucide-react";
 import toast from "react-hot-toast";
 
 interface Profile {
@@ -25,9 +34,17 @@ export function Dashboard() {
   const [error, setError] = useState("");
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
 
+  // ✅ Analytics
+  const [totalViews, setTotalViews] = useState(0);
+  const [totalClicks, setTotalClicks] = useState(0);
+
   useEffect(() => {
     if (user) fetchProfile();
   }, [user]);
+
+  useEffect(() => {
+    if (profile?.id) fetchAnalytics();
+  }, [profile?.id]);
 
   const fetchProfile = async () => {
     try {
@@ -49,6 +66,28 @@ export function Dashboard() {
       setError(err.message || "Error fetching profile");
     } finally {
       setLoading(false);
+    }
+  };
+
+  // ✅ Fetch Analytics
+  const fetchAnalytics = async () => {
+    if (!profile?.id) return;
+
+    try {
+      const { count: viewsCount } = await supabase
+        .from("profile_views")
+        .select("*", { count: "exact", head: true })
+        .eq("profile_id", profile.id);
+
+      const { count: clicksCount } = await supabase
+        .from("link_clicks")
+        .select("*", { count: "exact", head: true })
+        .eq("profile_id", profile.id);
+
+      setTotalViews(viewsCount || 0);
+      setTotalClicks(clicksCount || 0);
+    } catch (error) {
+      console.error("Error fetching analytics:", error);
     }
   };
 
@@ -118,7 +157,6 @@ export function Dashboard() {
     window.location.href = profileUrl;
   };
 
-  // ✅ Avatar Upload Handler
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     try {
       if (!e.target.files || e.target.files.length === 0) return;
@@ -144,7 +182,6 @@ export function Dashboard() {
       const fileName = `${Date.now()}.${fileExt}`;
       const filePath = `${user.id}/${fileName}`;
 
-      // Upload to storage
       const { error: uploadError } = await supabase.storage
         .from("avatars")
         .upload(filePath, file, {
@@ -154,12 +191,10 @@ export function Dashboard() {
 
       if (uploadError) throw uploadError;
 
-      // Get Public URL
       const { data } = supabase.storage.from("avatars").getPublicUrl(filePath);
 
       const avatarUrl = data.publicUrl;
 
-      // Update DB
       const { error: updateError } = await supabase
         .from("profiles")
         .update({ avatar_url: avatarUrl })
@@ -177,7 +212,6 @@ export function Dashboard() {
     }
   };
 
-  // ✅ Delete Avatar Handler (FIXED)
   const handleDeleteAvatar = async () => {
     if (!profile?.avatar_url) {
       toast.error("No avatar to delete ❌");
@@ -196,16 +230,14 @@ export function Dashboard() {
         return;
       }
 
-      const filePath = splitUrl[1]; // userId/file.png
+      const filePath = splitUrl[1];
 
-      // Delete from bucket
       const { error: deleteError } = await supabase.storage
         .from("avatars")
         .remove([filePath]);
 
       if (deleteError) throw deleteError;
 
-      // Update DB
       const { error: updateError } = await supabase
         .from("profiles")
         .update({ avatar_url: "" })
@@ -213,7 +245,6 @@ export function Dashboard() {
 
       if (updateError) throw updateError;
 
-      // Update UI
       setProfile((prev) => (prev ? { ...prev, avatar_url: "" } : prev));
 
       toast.success("Avatar deleted successfully 🗑️", { id: toastId });
@@ -264,10 +295,34 @@ export function Dashboard() {
       </header>
 
       <main className="max-w-6xl mx-auto px-4 py-10 grid grid-cols-1 lg:grid-cols-3 gap-6 animate-fadeIn">
+        {/* LEFT */}
         <div className="lg:col-span-1 bg-white/80 backdrop-blur-xl p-6 rounded-3xl shadow-lg border border-gray-200">
           <h2 className="text-lg font-bold text-gray-900 mb-4">
             Profile Settings
           </h2>
+
+          {/* ✅ Analytics Cards */}
+          <div className="grid grid-cols-2 gap-3 mb-6">
+            <div className="p-4 rounded-2xl bg-indigo-50 border border-indigo-100">
+              <div className="flex items-center gap-2 text-indigo-700 font-bold">
+                <Eye className="w-4 h-4" />
+                Views
+              </div>
+              <p className="text-2xl font-extrabold text-gray-900 mt-2">
+                {totalViews}
+              </p>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-purple-50 border border-purple-100">
+              <div className="flex items-center gap-2 text-purple-700 font-bold">
+                <MousePointerClick className="w-4 h-4" />
+                Clicks
+              </div>
+              <p className="text-2xl font-extrabold text-gray-900 mt-2">
+                {totalClicks}
+              </p>
+            </div>
+          </div>
 
           {error && (
             <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm animate-fadeIn">
@@ -411,11 +466,11 @@ export function Dashboard() {
                   )}
                 </button>
               </div>
-
             </div>
           )}
         </div>
 
+        {/* RIGHT */}
         <div className="lg:col-span-2">
           {user?.id && <LinkManager userId={user.id} />}
         </div>
