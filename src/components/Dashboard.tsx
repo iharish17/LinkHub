@@ -470,7 +470,6 @@ export function Dashboard() {
           )}
         </div>
 
-        {/* RIGHT */}
         <div className="lg:col-span-2">
           {user?.id && <LinkManager userId={user.id} />}
         </div>
