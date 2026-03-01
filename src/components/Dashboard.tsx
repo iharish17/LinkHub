@@ -1,7 +1,14 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useAuth } from "../hooks/useAuth";
 import { supabase } from "../lib/supabase";
+import {
+  cacheProfile,
+  getCachedProfile,
+  cacheAnalytics,
+  getCachedAnalytics,
+} from "../lib/offlineCache";
 import { LinkManager } from "./LinkManager";
+import { QRCodeGenerator } from "./QRCodeGenerator";
 import {
   LogOut,
   Copy,
@@ -11,6 +18,9 @@ import {
   Trash2,
   Eye,
   MousePointerClick,
+  QrCode,
+  ChevronDown,
+  WifiOff,
 } from "lucide-react";
 import toast from "react-hot-toast";
 
@@ -34,6 +44,10 @@ export function Dashboard() {
   const [error, setError] = useState("");
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [showDeleteAvatarModal, setShowDeleteAvatarModal] = useState(false);
+  const [showDropdown, setShowDropdown] = useState(false);
+  const [showQRModal, setShowQRModal] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const [isOffline, setIsOffline] = useState(!navigator.onLine);
 
   // ✅ Analytics
   const [totalViews, setTotalViews] = useState(0);
@@ -55,9 +69,18 @@ export function Dashboard() {
       setProfile(data);
       setDisplayName(data.display_name || "");
       setBio(data.bio || "");
+      cacheProfile(data);
     } catch (err: Error | unknown) {
-      const error = err instanceof Error ? err : new Error(String(err));
-      setError(error.message || "Error fetching profile");
+      // Offline fallback
+      const cached = getCachedProfile<Profile>();
+      if (cached) {
+        setProfile(cached);
+        setDisplayName(cached.display_name || "");
+        setBio(cached.bio || "");
+      } else {
+        const error = err instanceof Error ? err : new Error(String(err));
+        setError(error.message || "Error fetching profile");
+      }
     } finally {
       setLoading(false);
     }
@@ -78,10 +101,19 @@ export function Dashboard() {
         .select("*", { count: "exact", head: true })
         .eq("profile_id", profile.id);
 
-      setTotalViews(viewsCount || 0);
-      setTotalClicks(clicksCount || 0);
+      const views = viewsCount || 0;
+      const clicks = clicksCount || 0;
+      setTotalViews(views);
+      setTotalClicks(clicks);
+      cacheAnalytics({ totalViews: views, totalClicks: clicks });
     } catch (error) {
       console.error("Error fetching analytics:", error);
+      // Offline fallback
+      const cached = getCachedAnalytics();
+      if (cached) {
+        setTotalViews(cached.totalViews);
+        setTotalClicks(cached.totalClicks);
+      }
     }
   }, [profile?.id]);
 
@@ -92,6 +124,32 @@ export function Dashboard() {
   useEffect(() => {
     if (profile?.id) fetchAnalytics();
   }, [profile?.id, fetchAnalytics]);
+
+  // Online / Offline detection
+  useEffect(() => {
+    const goOnline = () => setIsOffline(false);
+    const goOffline = () => setIsOffline(true);
+    window.addEventListener("online", goOnline);
+    window.addEventListener("offline", goOffline);
+    return () => {
+      window.removeEventListener("online", goOnline);
+      window.removeEventListener("offline", goOffline);
+    };
+  }, []);
+
+  // Close dropdown on click outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(e.target as Node)
+      ) {
+        setShowDropdown(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   const handleSaveProfile = async () => {
     if (!profile) return;
@@ -280,6 +338,13 @@ export function Dashboard() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-rose-50 via-purple-50 to-cyan-50">
+      {/* Offline Banner */}
+      {isOffline && (
+        <div className="bg-amber-500 text-white text-center py-2 px-4 text-sm font-semibold flex items-center justify-center gap-2 animate-fadeIn">
+          <WifiOff className="w-4 h-4" />
+          You're offline — viewing cached data
+        </div>
+      )}
       <header className="bg-white/80 backdrop-blur-xl border-b border-gray-200 sticky top-0 z-10">
         <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
           <div>
@@ -297,13 +362,67 @@ export function Dashboard() {
               View Public Profile
             </button>
 
-            <button
-              onClick={signOut}
-              className="flex items-center gap-2 text-sm px-4 py-2 rounded-xl bg-gray-100 hover:bg-gray-200 transition font-semibold text-gray-700"
-            >
-              <LogOut className="w-4 h-4" />
-              Logout
-            </button>
+            {/* Dropdown Menu */}
+            <div className="relative" ref={dropdownRef}>
+              <button
+                onClick={() => setShowDropdown((prev) => !prev)}
+                className="flex items-center gap-2 text-sm px-3 py-2 rounded-xl bg-gray-100 hover:bg-gray-200 transition font-semibold text-gray-700"
+              >
+                {profile?.avatar_url ? (
+                  <img
+                    src={profile.avatar_url}
+                    alt="avatar"
+                    className="w-7 h-7 rounded-full object-cover border-2 border-purple-200"
+                  />
+                ) : (
+                  <div className="w-7 h-7 rounded-full bg-gradient-to-br from-rose-500 to-purple-500 flex items-center justify-center">
+                    <span className="text-xs font-bold text-white">
+                      {profile?.display_name?.[0]?.toUpperCase() ||
+                        profile?.username?.[0]?.toUpperCase() ||
+                        "U"}
+                    </span>
+                  </div>
+                )}
+                <ChevronDown
+                  className={`w-4 h-4 transition-transform duration-300 ${showDropdown ? "rotate-180" : ""
+                    }`}
+                />
+              </button>
+
+              {showDropdown && (
+                <div className="absolute right-0 mt-2 w-56 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden animate-dropdownOpen z-50">
+                  <div className="p-1.5">
+                    <button
+                      onClick={() => {
+                        setShowDropdown(false);
+                        setShowQRModal(true);
+                      }}
+                      className="flex items-center gap-3 w-full px-4 py-3 rounded-xl text-sm font-semibold text-gray-700 hover:bg-gradient-to-r hover:from-purple-50 hover:to-cyan-50 transition-all duration-200 group"
+                    >
+                      <div className="w-8 h-8 rounded-lg bg-purple-100 group-hover:bg-gradient-to-br group-hover:from-purple-500 group-hover:to-cyan-500 flex items-center justify-center transition-all duration-200">
+                        <QrCode className="w-4 h-4 text-purple-600 group-hover:text-white transition-colors" />
+                      </div>
+                      Generate QR Code
+                    </button>
+
+                    <div className="h-px bg-gray-100 mx-2 my-1" />
+
+                    <button
+                      onClick={() => {
+                        setShowDropdown(false);
+                        signOut();
+                      }}
+                      className="flex items-center gap-3 w-full px-4 py-3 rounded-xl text-sm font-semibold text-gray-700 hover:bg-red-50 hover:text-red-600 transition-all duration-200 group"
+                    >
+                      <div className="w-8 h-8 rounded-lg bg-gray-100 group-hover:bg-red-100 flex items-center justify-center transition-all duration-200">
+                        <LogOut className="w-4 h-4 text-gray-500 group-hover:text-red-500 transition-colors" />
+                      </div>
+                      Logout
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </header>
@@ -525,6 +644,15 @@ export function Dashboard() {
           {user?.id && <LinkManager userId={user.id} />}
         </div>
       </main>
+
+      {/* QR Code Modal */}
+      {showQRModal && profileUrl && (
+        <QRCodeGenerator
+          profileUrl={profileUrl}
+          avatarUrl={profile?.avatar_url || undefined}
+          onClose={() => setShowQRModal(false)}
+        />
+      )}
     </div>
   );
 }

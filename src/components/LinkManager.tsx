@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase, Link } from "../lib/supabase";
+import { cacheLinks, getCachedLinks } from "../lib/offlineCache";
 import {
   Plus,
   Trash2,
@@ -155,6 +156,7 @@ export function LinkManager({ userId }: LinkManagerProps) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
   const [showPopularModal, setShowPopularModal] = useState(false);
+  const [isOffline, setIsOffline] = useState(!navigator.onLine);
 
   const [formData, setFormData] = useState({
     title: "",
@@ -173,9 +175,16 @@ export function LinkManager({ userId }: LinkManagerProps) {
       if (error) throw error;
 
       setLinks(data || []);
+      cacheLinks(data || []);
     } catch (error) {
       console.error("Error loading links:", error);
-      toast.error("Failed to load links ❌");
+      // Offline fallback
+      const cached = getCachedLinks<Link>();
+      if (cached) {
+        setLinks(cached);
+      } else {
+        toast.error("Failed to load links ❌");
+      }
     } finally {
       setLoading(false);
     }
@@ -184,6 +193,18 @@ export function LinkManager({ userId }: LinkManagerProps) {
   useEffect(() => {
     loadLinks();
   }, [loadLinks]);
+
+  // Online / Offline detection
+  useEffect(() => {
+    const goOnline = () => setIsOffline(false);
+    const goOffline = () => setIsOffline(true);
+    window.addEventListener("online", goOnline);
+    window.addEventListener("offline", goOffline);
+    return () => {
+      window.removeEventListener("online", goOnline);
+      window.removeEventListener("offline", goOffline);
+    };
+  }, []);
 
   const handleAddLink = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -322,7 +343,8 @@ export function LinkManager({ userId }: LinkManagerProps) {
         <div className="flex gap-2">
           <button
             onClick={() => setShowPopularModal(true)}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-purple-500 to-cyan-500 text-white shadow hover:from-purple-600 hover:to-cyan-600 transition-all font-semibold hover:shadow-lg"
+            disabled={isOffline}
+            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-purple-500 to-cyan-500 text-white shadow hover:from-purple-600 hover:to-cyan-600 transition-all font-semibold hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Sparkles className="w-4 h-4" />
             Popular Links
@@ -330,7 +352,8 @@ export function LinkManager({ userId }: LinkManagerProps) {
 
           <button
             onClick={() => setShowAddForm(!showAddForm)}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-rose-500 to-purple-500 text-white shadow hover:from-rose-600 hover:to-purple-600 hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 font-semibold"
+            disabled={isOffline}
+            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-rose-500 to-purple-500 text-white shadow hover:from-rose-600 hover:to-purple-600 hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 font-semibold disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
           >
             <Plus className="w-4 h-4" />
             Add Link
@@ -481,6 +504,7 @@ export function LinkManager({ userId }: LinkManagerProps) {
               index={index}
               totalLinks={links.length}
               editingId={editingId}
+              isOffline={isOffline}
               onEdit={setEditingId}
               onUpdate={handleUpdateLink}
               onDelete={handleDeleteLink}
@@ -499,6 +523,7 @@ type LinkItemProps = {
   index: number;
   totalLinks: number;
   editingId: string | null;
+  isOffline: boolean;
   onEdit: (id: string | null) => void;
   onUpdate: (id: string, updates: Partial<Link>) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
@@ -511,6 +536,7 @@ function LinkItem({
   index,
   totalLinks,
   editingId,
+  isOffline,
   onEdit,
   onUpdate,
   onDelete,
@@ -576,11 +602,10 @@ function LinkItem({
 
   return (
     <div
-      className={`p-5 border rounded-2xl transition-all duration-300 shadow-sm hover:shadow-md ${
-        link.is_active
+      className={`p-5 border rounded-2xl transition-all duration-300 shadow-sm hover:shadow-md ${link.is_active
           ? "bg-white border-gray-200"
           : "bg-gray-50 border-gray-200 opacity-60"
-      }`}
+        }`}
     >
       <div className="flex items-center gap-3">
         <div className="flex flex-col gap-2">
@@ -609,7 +634,8 @@ function LinkItem({
         <div className="flex items-center gap-2">
           <button
             onClick={() => onToggleActive(link)}
-            className="p-2 hover:bg-gray-100 rounded-xl transition"
+            disabled={isOffline}
+            className="p-2 hover:bg-gray-100 rounded-xl transition disabled:opacity-40 disabled:cursor-not-allowed"
             title={link.is_active ? "Hide link" : "Show link"}
           >
             {link.is_active ? (
@@ -621,14 +647,16 @@ function LinkItem({
 
           <button
             onClick={() => onEdit(link.id)}
-            className="p-2 hover:bg-gray-100 rounded-xl transition"
+            disabled={isOffline}
+            className="p-2 hover:bg-gray-100 rounded-xl transition disabled:opacity-40 disabled:cursor-not-allowed"
           >
             <Edit2 className="w-4 h-4 text-gray-600" />
           </button>
 
           <button
             onClick={() => onDelete(link.id)}
-            className="p-2 hover:bg-red-50 rounded-xl transition"
+            disabled={isOffline}
+            className="p-2 hover:bg-red-50 rounded-xl transition disabled:opacity-40 disabled:cursor-not-allowed"
           >
             <Trash2 className="w-4 h-4 text-red-600" />
           </button>

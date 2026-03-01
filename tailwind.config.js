@@ -76,6 +76,26 @@ export default {
             transform: "translateX(0)",
           },
         },
+        dropdownOpen: {
+          "0%": {
+            opacity: "0",
+            transform: "translateY(-8px) scale(0.95)",
+          },
+          "100%": {
+            opacity: "1",
+            transform: "translateY(0) scale(1)",
+          },
+        },
+        modalSlideUp: {
+          "0%": {
+            opacity: "0",
+            transform: "translateY(20px) scale(0.97)",
+          },
+          "100%": {
+            opacity: "1",
+            transform: "translateY(0) scale(1)",
+          },
+        },
       },
       animation: {
         fadeInUp: "fadeInUp 0.6s ease-out",
@@ -85,6 +105,8 @@ export default {
         scaleIn: "scaleIn 0.3s ease-out",
         slideInFromLeft: "slideInFromLeft 0.6s ease-out",
         slideInFromRight: "slideInFromRight 0.6s ease-out",
+        dropdownOpen: "dropdownOpen 0.2s cubic-bezier(0.16, 1, 0.3, 1)",
+        modalSlideUp: "modalSlideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
       },
     },
   },
