@@ -14,15 +14,21 @@ function AppContent() {
   const [username, setUsername] = useState<string | null>(null);
 
   useEffect(() => {
-    const path = window.location.pathname;
+    const updateView = () => {
+      const path = window.location.pathname;
 
-    if (path === "/" || path === "") {
-      setCurrentView(user ? "dashboard" : "auth");
-    } else {
-      const usernameFromPath = path.substring(1);
-      setUsername(usernameFromPath);
-      setCurrentView("profile");
-    }
+      if (path === "/" || path === "") {
+        setCurrentView(user ? "dashboard" : "auth");
+      } else {
+        const usernameFromPath = path.substring(1);
+        setUsername(usernameFromPath);
+        setCurrentView("profile");
+      }
+    };
+
+    updateView();
+    window.addEventListener("popstate", updateView);
+    return () => window.removeEventListener("popstate", updateView);
   }, [user]);
 
   if (loading) {

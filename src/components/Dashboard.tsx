@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "../hooks/useAuth";
 import { supabase } from "../lib/supabase";
-import { LinkManager } from "../components/LinkManager";
+import { LinkManager } from "./LinkManager";
 import {
   LogOut,
   Copy,
@@ -33,6 +33,7 @@ export function Dashboard() {
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState("");
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [showDeleteAvatarModal, setShowDeleteAvatarModal] = useState(false);
 
   // ✅ Analytics
   const [totalViews, setTotalViews] = useState(0);
@@ -156,7 +157,10 @@ export function Dashboard() {
 
   const handleViewProfile = () => {
     if (!profileUrl) return;
-    window.location.href = profileUrl;
+
+    // push a new entry and notify listeners so navigation happens without a full reload
+    window.history.pushState(null, "", profileUrl);
+    window.dispatchEvent(new PopStateEvent("popstate"));
   };
 
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -215,20 +219,26 @@ export function Dashboard() {
     }
   };
 
-  const handleDeleteAvatar = async () => {
+  // Open the modal to confirm deletion
+  const handleDeleteAvatar = () => {
     if (!profile?.avatar_url) {
       toast.error("No avatar to delete ❌");
       return;
     }
 
-    if (!confirm("Are you sure you want to delete your avatar?")) return;
+    setShowDeleteAvatarModal(true);
+  };
+
+  // Called when the user confirms deletion in the modal
+  const confirmDeleteAvatar = async () => {
+    setShowDeleteAvatarModal(false);
 
     try {
       const toastId = toast.loading("Deleting avatar...");
 
-      const splitUrl = profile.avatar_url.split("/avatars/");
+      const splitUrl = profile?.avatar_url?.split("/avatars/");
 
-      if (splitUrl.length < 2) {
+      if (!splitUrl || splitUrl.length < 2) {
         toast.error("Invalid avatar URL ❌", { id: toastId });
         return;
       }
@@ -378,6 +388,42 @@ export function Dashboard() {
               </button>
             )}
           </div>
+
+          {/* Delete Avatar Confirmation Modal */}
+          {showDeleteAvatarModal && (
+            <div
+              role="dialog"
+              aria-modal="true"
+              className="fixed inset-0 z-50 flex items-center justify-center px-4"
+            >
+              <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
+
+              <div className="relative bg-white rounded-2xl shadow-2xl border border-gray-200 p-6 max-w-md w-full z-10 animate-zoomIn">
+                <h3 className="text-lg font-bold text-gray-900 mb-2">
+                  Delete Avatar
+                </h3>
+                <p className="text-sm text-gray-600 mb-4">
+                  Are you sure you want to delete your avatar? This action cannot be undone.
+                </p>
+
+                <div className="flex justify-end gap-3">
+                  <button
+                    onClick={() => setShowDeleteAvatarModal(false)}
+                    className="px-4 py-2 rounded-xl bg-gray-200 text-gray-800 font-semibold"
+                  >
+                    Cancel
+                  </button>
+
+                  <button
+                    onClick={confirmDeleteAvatar}
+                    className="px-4 py-2 rounded-xl bg-red-600 text-white font-semibold"
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Username */}
           <div className="mb-4">
