@@ -273,7 +273,7 @@ export function PublicProfile({ username }: PublicProfileProps) {
                       {getLinkIcon(link)}
                     </div>
 
-                    <span className="text-lg font-bold text-gray-900 group-hover:text-purple-600 transition-colors">
+                    <span className="text-lg font-medium text-gray-900 group-hover:text-purple-600 transition-colors">
                       {link.title}
                     </span>
                   </div>
