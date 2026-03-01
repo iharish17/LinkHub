@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { supabase, Link } from "../lib/supabase";
 import {
   Plus,
@@ -109,7 +109,7 @@ const popularLinks: PopularLink[] = [
     name: "Discord",
     url: "https://discord.gg/",
     platform: "discord",
-    icon: <FaDiscord className="text-indigo-600 w-5 h-5" />,
+    icon: <FaDiscord className="text-purple-600 w-5 h-5" />,
   },
   {
     name: "Telegram",
@@ -162,11 +162,7 @@ export function LinkManager({ userId }: LinkManagerProps) {
     platform: "custom",
   });
 
-  useEffect(() => {
-    loadLinks();
-  }, [userId]);
-
-  const loadLinks = async () => {
+  const loadLinks = useCallback(async () => {
     try {
       const { data, error } = await supabase
         .from("links")
@@ -183,7 +179,11 @@ export function LinkManager({ userId }: LinkManagerProps) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [userId]);
+
+  useEffect(() => {
+    loadLinks();
+  }, [loadLinks]);
 
   const handleAddLink = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -322,7 +322,7 @@ export function LinkManager({ userId }: LinkManagerProps) {
         <div className="flex gap-2">
           <button
             onClick={() => setShowPopularModal(true)}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow hover:bg-gray-800 transition-all font-semibold"
+            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-purple-500 to-cyan-500 text-white shadow hover:from-purple-600 hover:to-cyan-600 transition-all font-semibold hover:shadow-lg"
           >
             <Sparkles className="w-4 h-4" />
             Popular Links
@@ -330,7 +330,7 @@ export function LinkManager({ userId }: LinkManagerProps) {
 
           <button
             onClick={() => setShowAddForm(!showAddForm)}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 font-semibold"
+            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-rose-500 to-purple-500 text-white shadow hover:from-rose-600 hover:to-purple-600 hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 font-semibold"
           >
             <Plus className="w-4 h-4" />
             Add Link
@@ -360,7 +360,7 @@ export function LinkManager({ userId }: LinkManagerProps) {
                 <button
                   key={link.name}
                   onClick={() => handleSelectPopular(link)}
-                  className="flex items-center gap-3 p-3 rounded-2xl border border-gray-200 hover:border-indigo-400 hover:bg-indigo-50 transition font-semibold text-gray-800"
+                  className="flex items-center gap-3 p-3 rounded-2xl border border-gray-200 hover:border-purple-400 hover:bg-rose-50 transition font-semibold text-gray-800"
                 >
                   <div className="p-2 rounded-xl bg-gray-100">{link.icon}</div>
                   <span className="text-sm">{link.name}</span>
@@ -388,7 +388,7 @@ export function LinkManager({ userId }: LinkManagerProps) {
                 onChange={(e) =>
                   setFormData({ ...formData, title: e.target.value })
                 }
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-4 focus:ring-indigo-200 focus:border-indigo-500 outline-none transition-all"
+                className="w-full px-4 py-3 border border-purple-200 rounded-xl focus:ring-4 focus:ring-purple-300 focus:border-purple-500 outline-none transition-all bg-white/50"
                 placeholder="My Website"
                 required
               />
@@ -404,7 +404,7 @@ export function LinkManager({ userId }: LinkManagerProps) {
                 onChange={(e) =>
                   setFormData({ ...formData, url: e.target.value })
                 }
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-4 focus:ring-indigo-200 focus:border-indigo-500 outline-none transition-all"
+                className="w-full px-4 py-3 border border-purple-200 rounded-xl focus:ring-4 focus:ring-purple-300 focus:border-purple-500 outline-none transition-all bg-white/50"
                 placeholder="example.com"
                 required
               />
@@ -420,7 +420,7 @@ export function LinkManager({ userId }: LinkManagerProps) {
                 onChange={(e) =>
                   setFormData({ ...formData, platform: e.target.value })
                 }
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl bg-white focus:ring-4 focus:ring-indigo-200 focus:border-indigo-500 outline-none transition-all"
+                className="w-full px-4 py-3 border border-purple-200 rounded-xl bg-white/50 focus:ring-4 focus:ring-purple-300 focus:border-purple-500 outline-none transition-all"
               >
                 <option value="custom">Custom</option>
                 <option value="github">GitHub</option>
@@ -446,7 +446,7 @@ export function LinkManager({ userId }: LinkManagerProps) {
             <div className="flex gap-2">
               <button
                 type="submit"
-                className="flex-1 py-3 rounded-xl bg-indigo-600 text-white font-semibold hover:bg-indigo-700 transition"
+                className="flex-1 py-3 rounded-xl bg-rose-500 text-white font-semibold hover:bg-rose-600 transition"
               >
                 Add Link
               </button>
@@ -534,13 +534,13 @@ function LinkItem({
 
   if (isEditing) {
     return (
-      <div className="p-5 bg-indigo-50 border border-indigo-200 rounded-2xl shadow-sm animate-fadeIn">
+      <div className="p-5 bg-purple-50 border border-purple-200 rounded-2xl shadow-sm animate-fadeIn">
         <div className="space-y-3">
           <input
             type="text"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-4 focus:ring-indigo-200 focus:border-indigo-500 outline-none transition-all"
+            className="w-full px-4 py-3 border border-purple-200 rounded-xl focus:ring-4 focus:ring-purple-300 focus:border-purple-500 outline-none transition-all bg-white/50"
             placeholder="Title"
           />
 
@@ -548,14 +548,14 @@ function LinkItem({
             type="url"
             value={url}
             onChange={(e) => setUrl(e.target.value)}
-            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-4 focus:ring-indigo-200 focus:border-indigo-500 outline-none transition-all"
+            className="w-full px-4 py-3 border border-purple-200 rounded-xl focus:ring-4 focus:ring-purple-300 focus:border-purple-500 outline-none transition-all bg-white/50"
             placeholder="URL"
           />
 
           <div className="flex gap-2">
             <button
               onClick={handleSave}
-              className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition font-semibold"
+              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-rose-500 to-purple-500 text-white rounded-xl hover:from-rose-600 hover:to-purple-600 transition font-semibold"
             >
               <Check className="w-4 h-4" />
               Save

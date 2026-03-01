@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { useAuth } from "../contexts/AuthContext";
-import { Link2 } from "lucide-react";
+import { useAuth } from "../hooks/useAuth";
+import { Link2, Eye, EyeOff } from "lucide-react";
 import toast from "react-hot-toast";
 
 export function Auth() {
@@ -10,6 +10,7 @@ export function Auth() {
   const [username, setUsername] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const { signIn, signUp } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -60,29 +61,29 @@ export function Auth() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-indigo-50 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-rose-50 via-purple-50 to-cyan-50 flex items-center justify-center p-4">
       <div className="w-full max-w-md animate-fadeIn">
         <div className="text-center mb-10">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-2xl mb-4 shadow-lg">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-rose-500 via-purple-500 to-cyan-500 rounded-2xl mb-4 shadow-lg">
             <Link2 className="w-8 h-8 text-white" />
           </div>
 
-          <h1 className="text-4xl font-extrabold text-gray-900 tracking-tight mb-2">
+          <h1 className="text-4xl font-extrabold text-gray-900 tracking-tight mb-2 animate-fadeInUp" style={{ animationDelay: "0.2s" }}>
             LinkHub
           </h1>
-          <p className="text-gray-600 text-sm">
+          <p className="text-gray-600 text-sm animate-fadeInUp" style={{ animationDelay: "0.3s" }}>
             Share all your links in one clean page ✨
           </p>
         </div>
 
-        <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-xl border border-gray-200 p-8">
-          <div className="flex gap-2 mb-6 bg-gray-100 rounded-xl p-1">
+        <div className="bg-white/90 backdrop-blur-xl rounded-3xl shadow-2xl border border-purple-100/50 p-8 animate-slideInUp" style={{ animationDelay: "0.4s" }}>
+          <div className="flex gap-2 mb-6 bg-gradient-to-r from-rose-100/50 to-cyan-100/50 rounded-xl p-1">
             <button
               onClick={() => setIsLogin(true)}
               className={`flex-1 py-2 rounded-lg font-semibold transition-all duration-300 ${
                 isLogin
-                  ? "bg-white shadow text-indigo-600"
-                  : "text-gray-500 hover:text-gray-800"
+                  ? "bg-gradient-to-r from-rose-500 to-purple-500 text-white shadow-lg animate-scaleIn"
+                  : "text-gray-600 hover:text-gray-800"
               }`}
             >
               Sign In
@@ -92,17 +93,17 @@ export function Auth() {
               onClick={() => setIsLogin(false)}
               className={`flex-1 py-2 rounded-lg font-semibold transition-all duration-300 ${
                 !isLogin
-                  ? "bg-white shadow text-indigo-600"
-                  : "text-gray-500 hover:text-gray-800"
+                  ? "bg-gradient-to-r from-purple-500 to-cyan-500 text-white shadow-lg animate-scaleIn"
+                  : "text-gray-600 hover:text-gray-800"
               }`}
             >
               Sign Up
             </button>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-4" key={isLogin ? "login" : "signup"}>
             {!isLogin && (
-              <div className="animate-fadeIn">
+              <div className="animate-fadeInUp" key={`username-${isLogin}`}>
                 <label className="block text-sm font-semibold text-gray-700 mb-1">
                   Username
                 </label>
@@ -111,14 +112,14 @@ export function Auth() {
                   type="text"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-4 focus:ring-indigo-200 focus:border-indigo-500 outline-none transition-all"
+                  className="w-full px-4 py-3 border border-purple-200 rounded-xl focus:ring-4 focus:ring-purple-300 focus:border-purple-500 outline-none transition-all bg-white/50"
                   placeholder="johndoe"
                   required={!isLogin}
                 />
               </div>
             )}
 
-            <div>
+            <div className="animate-fadeInUp" key={`email-${isLogin}`}>
               <label className="block text-sm font-semibold text-gray-700 mb-1">
                 Email
               </label>
@@ -127,38 +128,53 @@ export function Auth() {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-4 focus:ring-indigo-200 focus:border-indigo-500 outline-none transition-all"
+                className="w-full px-4 py-3 border border-purple-200 rounded-xl focus:ring-4 focus:ring-purple-300 focus:border-purple-500 outline-none transition-all bg-white/50"
                 placeholder="you@example.com"
                 required
               />
             </div>
 
-            <div>
+            <div className="animate-fadeInUp" key={`password-${isLogin}`}>
               <label className="block text-sm font-semibold text-gray-700 mb-1">
                 Password
               </label>
 
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-4 focus:ring-indigo-200 focus:border-indigo-500 outline-none transition-all"
-                placeholder="••••••••"
-                required
-                minLength={6}
-              />
+              <div className="relative">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full px-4 py-3 border border-purple-200 rounded-xl focus:ring-4 focus:ring-purple-300 focus:border-purple-500 outline-none transition-all pr-10 bg-white/50"
+                  placeholder="••••••••"
+                  required
+                  minLength={6}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 transition"
+                  title={showPassword ? "Hide password" : "Show password"}
+                >
+                  {showPassword ? (
+                    <EyeOff className="w-5 h-5" />
+                  ) : (
+                    <Eye className="w-5 h-5" />
+                  )}
+                </button>
+              </div>
             </div>
 
             {error && (
-              <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm animate-fadeIn">
+              <div key={`error-${error}`} className="p-3 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm animate-shake">
                 {error}
               </div>
             )}
 
             <button
+              key={`submit-${isLogin}`}
               type="submit"
               disabled={loading}
-              className="w-full py-3 rounded-xl font-semibold bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg hover:shadow-xl hover:scale-[1.01] active:scale-[0.98] transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full py-3 rounded-xl font-semibold bg-gradient-to-r from-rose-500 via-purple-500 to-cyan-500 text-white shadow-lg hover:shadow-xl hover:scale-[1.01] active:scale-[0.98] transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed animate-fadeInUp hover:from-rose-600 hover:via-purple-600 hover:to-cyan-600"
             >
               {loading ? "Please wait..." : isLogin ? "Sign In" : "Create Account"}
             </button>

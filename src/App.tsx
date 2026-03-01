@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { AuthProvider, useAuth } from "./contexts/AuthContext";
+import { AuthProvider } from "./contexts/AuthContext";
+import { useAuth } from "./hooks/useAuth";
 import { Auth } from "./components/Auth";
 import { Dashboard } from "./components/Dashboard";
 import { PublicProfile } from "./components/PublicProfile";

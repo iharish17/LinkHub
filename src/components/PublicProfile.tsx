@@ -152,7 +152,7 @@ export function PublicProfile({ username }: PublicProfileProps) {
     if (platform === "pinterest") return <FaPinterest className="w-5 h-5 text-red-600" />;
     if (platform === "reddit") return <FaReddit className="w-5 h-5 text-orange-600" />;
     if (platform === "snapchat") return <FaSnapchatGhost className="w-5 h-5 text-yellow-500" />;
-    if (platform === "discord") return <FaDiscord className="w-5 h-5 text-indigo-600" />;
+    if (platform === "discord") return <FaDiscord className="w-5 h-5 text-purple-600" />;
     if (platform === "telegram") return <FaTelegram className="w-5 h-5 text-blue-500" />;
     if (platform === "whatsapp") return <FaWhatsapp className="w-5 h-5 text-green-600" />;
     if (platform === "medium") return <FaMedium className="w-5 h-5 text-black" />;
@@ -180,9 +180,9 @@ export function PublicProfile({ username }: PublicProfileProps) {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-indigo-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-rose-50 via-purple-50 to-cyan-50 flex items-center justify-center">
         <div className="flex flex-col items-center gap-3">
-          <div className="w-10 h-10 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+          <div className="w-10 h-10 border-4 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
           <div className="text-gray-700 font-medium">
             Loading public profile...
           </div>
@@ -193,9 +193,9 @@ export function PublicProfile({ username }: PublicProfileProps) {
 
   if (notFound) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-indigo-50 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-gradient-to-br from-rose-50 via-purple-50 to-cyan-50 flex items-center justify-center p-4">
         <div className="text-center animate-fadeIn">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-gray-200 rounded-2xl mb-4">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-rose-500 to-purple-500 rounded-2xl mb-4 shadow-lg">
             <Link2 className="w-8 h-8 text-gray-400" />
           </div>
           <h1 className="text-3xl font-extrabold text-gray-900 mb-2">
@@ -210,7 +210,7 @@ export function PublicProfile({ username }: PublicProfileProps) {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-indigo-50 py-12 px-4">
+    <div className="min-h-screen bg-gradient-to-br from-rose-50 via-purple-50 to-cyan-50 py-12 px-4">
       <div className="max-w-2xl mx-auto animate-fadeIn">
         <div className="text-center mb-10">
           <div className="flex justify-center mb-4">
@@ -222,7 +222,7 @@ export function PublicProfile({ username }: PublicProfileProps) {
                 className="w-28 h-28 rounded-full object-cover shadow-xl border-4 border-white"
               />
             ) : (
-              <div className="inline-flex items-center justify-center w-28 h-28 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-full text-white text-4xl font-extrabold shadow-xl">
+              <div className="inline-flex items-center justify-center w-28 h-28 bg-gradient-to-br from-rose-500 via-purple-500 to-cyan-500 rounded-full text-white text-4xl font-extrabold shadow-xl">
                 {getInitials()}
               </div>
             )}
@@ -257,23 +257,28 @@ export function PublicProfile({ username }: PublicProfileProps) {
               <a
                 key={link.id}
                 href={link.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={() => handleLinkClick(link)}
-                className="block w-full p-5 bg-white/90 backdrop-blur-xl hover:bg-white border border-gray-200 hover:border-indigo-400 rounded-2xl transition-all duration-300 shadow-md hover:shadow-xl group hover:scale-[1.01]"
+                // keep href for accessibility/fallback, but open programmatically
+                onClick={(e) => {
+                  e.preventDefault();
+                  // open in new tab without causing current tab navigation
+                  window.open(link.url, "_blank", "noopener,noreferrer");
+                  // track the click (fire-and-forget)
+                  void handleLinkClick(link);
+                }}
+                className="block w-full p-5 bg-white/90 backdrop-blur-xl hover:bg-white border border-purple-200 hover:border-purple-400 rounded-2xl transition-all duration-300 shadow-md hover:shadow-xl group hover:scale-[1.01]"
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-xl bg-gray-100 group-hover:bg-indigo-50 transition">
+                    <div className="p-2 rounded-xl bg-purple-50 group-hover:bg-rose-50 transition">
                       {getLinkIcon(link)}
                     </div>
 
-                    <span className="text-lg font-bold text-gray-900 group-hover:text-indigo-600 transition-colors">
+                    <span className="text-lg font-bold text-gray-900 group-hover:text-purple-600 transition-colors">
                       {link.title}
                     </span>
                   </div>
 
-                  <ExternalLink className="w-5 h-5 text-gray-400 group-hover:text-indigo-600 transition-colors" />
+                  <ExternalLink className="w-5 h-5 text-gray-400 group-hover:text-purple-600 transition-colors" />
                 </div>
               </a>
             ))
@@ -285,7 +290,7 @@ export function PublicProfile({ username }: PublicProfileProps) {
             Create your own link page with{" "}
             <a
               href="/"
-              className="text-indigo-600 hover:underline font-semibold"
+              className="text-purple-600 hover:underline font-semibold"
             >
               LinkHub
             </a>

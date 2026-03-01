@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { useAuth } from "../contexts/AuthContext";
+import { useCallback, useEffect, useState } from "react";
+import { useAuth } from "../hooks/useAuth";
 import { supabase } from "../lib/supabase";
 import { LinkManager } from "../components/LinkManager";
 import {
@@ -38,15 +38,7 @@ export function Dashboard() {
   const [totalViews, setTotalViews] = useState(0);
   const [totalClicks, setTotalClicks] = useState(0);
 
-  useEffect(() => {
-    if (user) fetchProfile();
-  }, [user]);
-
-  useEffect(() => {
-    if (profile?.id) fetchAnalytics();
-  }, [profile?.id]);
-
-  const fetchProfile = async () => {
+  const fetchProfile = useCallback(async () => {
     try {
       setLoading(true);
       setError("");
@@ -62,15 +54,16 @@ export function Dashboard() {
       setProfile(data);
       setDisplayName(data.display_name || "");
       setBio(data.bio || "");
-    } catch (err: any) {
-      setError(err.message || "Error fetching profile");
+    } catch (err: Error | unknown) {
+      const error = err instanceof Error ? err : new Error(String(err));
+      setError(error.message || "Error fetching profile");
     } finally {
       setLoading(false);
     }
-  };
+  }, [user?.id]);
 
   // ✅ Fetch Analytics
-  const fetchAnalytics = async () => {
+  const fetchAnalytics = useCallback(async () => {
     if (!profile?.id) return;
 
     try {
@@ -89,7 +82,15 @@ export function Dashboard() {
     } catch (error) {
       console.error("Error fetching analytics:", error);
     }
-  };
+  }, [profile?.id]);
+
+  useEffect(() => {
+    if (user) fetchProfile();
+  }, [user, fetchProfile]);
+
+  useEffect(() => {
+    if (profile?.id) fetchAnalytics();
+  }, [profile?.id, fetchAnalytics]);
 
   const handleSaveProfile = async () => {
     if (!profile) return;
@@ -130,9 +131,10 @@ export function Dashboard() {
 
       toast.success("Profile Updated Successfully ✅", { id: toastId });
       await fetchProfile();
-    } catch (err: any) {
-      setError(err.message || "Error updating profile");
-      toast.error(err.message || "Error updating profile");
+    } catch (err: Error | unknown) {
+      const error = err instanceof Error ? err : new Error(String(err));
+      setError(error.message || "Error updating profile");
+      toast.error(error.message || "Error updating profile");
     } finally {
       setSaving(false);
     }
@@ -205,8 +207,9 @@ export function Dashboard() {
       toast.success("Avatar updated successfully 🎉", { id: toastId });
 
       setProfile((prev) => (prev ? { ...prev, avatar_url: avatarUrl } : prev));
-    } catch (err: any) {
-      toast.error(err.message || "Failed to upload avatar ❌");
+    } catch (err: Error | unknown) {
+      const error = err instanceof Error ? err : new Error(String(err));
+      toast.error(error.message || "Failed to upload avatar ❌");
     } finally {
       setUploadingAvatar(false);
     }
@@ -248,16 +251,17 @@ export function Dashboard() {
       setProfile((prev) => (prev ? { ...prev, avatar_url: "" } : prev));
 
       toast.success("Avatar deleted successfully 🗑️", { id: toastId });
-    } catch (err: any) {
-      toast.error(err.message || "Failed to delete avatar ❌");
+    } catch (err: Error | unknown) {
+      const error = err instanceof Error ? err : new Error(String(err));
+      toast.error(error.message || "Failed to delete avatar ❌");
     }
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-indigo-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-rose-50 via-purple-50 to-cyan-50 flex items-center justify-center">
         <div className="flex flex-col items-center gap-3">
-          <div className="w-10 h-10 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+          <div className="w-10 h-10 border-4 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
           <p className="text-gray-700 font-medium">Loading profile...</p>
         </div>
       </div>
@@ -265,7 +269,7 @@ export function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-indigo-50">
+    <div className="min-h-screen bg-gradient-to-br from-rose-50 via-purple-50 to-cyan-50">
       <header className="bg-white/80 backdrop-blur-xl border-b border-gray-200 sticky top-0 z-10">
         <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
           <div>
@@ -277,7 +281,7 @@ export function Dashboard() {
           <div className="flex items-center gap-3">
             <button
               onClick={handleViewProfile}
-              className="flex items-center gap-1 text-sm px-4 py-2 rounded-xl font-semibold bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:bg-gray-800 transition"
+              className="flex items-center gap-1 text-sm px-4 py-2 rounded-xl font-semibold bg-gradient-to-r from-rose-500 to-purple-500 text-white hover:from-rose-600 hover:to-purple-600 transition shadow-lg"
             >
               <ExternalLink className="w-4 h-4" />
               View Public Profile
@@ -294,17 +298,17 @@ export function Dashboard() {
         </div>
       </header>
 
-      <main className="max-w-6xl mx-auto px-4 py-10 grid grid-cols-1 lg:grid-cols-3 gap-6 animate-fadeIn">
+      <main className="max-w-6xl mx-auto px-4 py-10 grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* LEFT */}
-        <div className="lg:col-span-1 bg-white/80 backdrop-blur-xl p-6 rounded-3xl shadow-lg border border-gray-200">
+        <div className="lg:col-span-1 bg-white/80 backdrop-blur-xl p-6 rounded-3xl shadow-lg border border-pink-100/50 animate-slideInFromLeft">
           <h2 className="text-lg font-bold text-gray-900 mb-4">
             Profile Settings
           </h2>
 
           {/* ✅ Analytics Cards */}
           <div className="grid grid-cols-2 gap-3 mb-6">
-            <div className="p-4 rounded-2xl bg-indigo-50 border border-indigo-100">
-              <div className="flex items-center gap-2 text-indigo-700 font-bold">
+            <div className="p-4 rounded-2xl bg-rose-50 border border-rose-100">
+              <div className="flex items-center gap-2 text-rose-700 font-bold">
                 <Eye className="w-4 h-4" />
                 Views
               </div>
@@ -332,7 +336,7 @@ export function Dashboard() {
 
           {/* Avatar Section */}
           <div className="flex flex-col items-center mb-6">
-            <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-indigo-200 shadow-md bg-gray-100 flex items-center justify-center">
+            <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-purple-200 shadow-md bg-purple-50 flex items-center justify-center">
               {profile?.avatar_url ? (
                 <img
                   src={profile.avatar_url}
@@ -340,7 +344,7 @@ export function Dashboard() {
                   className="w-full h-full object-cover"
                 />
               ) : (
-                <span className="text-3xl font-extrabold text-indigo-600">
+                <span className="text-3xl font-extrabold text-rose-600">
                   {profile?.display_name?.[0]?.toUpperCase() ||
                     profile?.username?.[0]?.toUpperCase() ||
                     "U"}
@@ -348,7 +352,7 @@ export function Dashboard() {
               )}
             </div>
 
-            <label className="mt-4 cursor-pointer inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl font-semibold hover:bg-indigo-700 transition">
+            <label className="mt-4 cursor-pointer inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500 to-cyan-500 text-white rounded-xl font-semibold hover:from-purple-600 hover:to-cyan-600 transition shadow-lg">
               <Upload className="w-4 h-4" />
               {uploadingAvatar ? "Uploading..." : "Upload Avatar"}
               <input
@@ -391,7 +395,7 @@ export function Dashboard() {
                     : prev
                 )
               }
-              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-4 focus:ring-indigo-200 focus:border-indigo-500 outline-none transition-all"
+              className="w-full px-4 py-3 border border-purple-200 rounded-xl focus:ring-4 focus:ring-purple-300 focus:border-purple-500 outline-none transition-all bg-white/50"
               placeholder="username"
             />
 
@@ -410,7 +414,7 @@ export function Dashboard() {
               type="text"
               value={displayName}
               onChange={(e) => setDisplayName(e.target.value)}
-              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-4 focus:ring-indigo-200 focus:border-indigo-500 outline-none transition-all"
+              className="w-full px-4 py-3 border border-purple-200 rounded-xl focus:ring-4 focus:ring-purple-300 focus:border-purple-500 outline-none transition-all bg-white/50"
               placeholder="Your name"
             />
           </div>
@@ -424,7 +428,7 @@ export function Dashboard() {
             <textarea
               value={bio}
               onChange={(e) => setBio(e.target.value)}
-              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-4 focus:ring-indigo-200 focus:border-indigo-500 outline-none transition-all"
+              className="w-full px-4 py-3 border border-purple-200 rounded-xl focus:ring-4 focus:ring-purple-300 focus:border-purple-500 outline-none transition-all bg-white/50"
               placeholder="Write something about you..."
               rows={3}
             />
@@ -434,7 +438,7 @@ export function Dashboard() {
           <button
             onClick={handleSaveProfile}
             disabled={saving}
-            className="w-full py-3 rounded-xl font-semibold bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg hover:shadow-xl hover:scale-[1.01] active:scale-[0.98] transition-all duration-300 disabled:opacity-50"
+            className="w-full py-3 rounded-xl font-semibold bg-gradient-to-r from-rose-500 via-purple-500 to-cyan-500 text-white shadow-lg hover:shadow-xl hover:scale-[1.01] active:scale-[0.98] transition-all duration-300 disabled:opacity-50 hover:from-rose-600 hover:via-purple-600 hover:to-cyan-600"
           >
             {saving ? "Saving..." : "Save Profile"}
           </button>
@@ -471,7 +475,7 @@ export function Dashboard() {
         </div>
 
         {/* RIGHT */}
-        <div className="lg:col-span-2">
+        <div className="lg:col-span-2 animate-slideInFromRight">
           {user?.id && <LinkManager userId={user.id} />}
         </div>
       </main>
